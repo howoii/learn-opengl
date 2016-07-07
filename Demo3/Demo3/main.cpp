@@ -36,7 +36,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//用SOIL加载纹理图片
 	GLint width, height;
-	unsigned char *image = SOIL_load_image("sky.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char *image = SOIL_load_image("awesome.png", &width, &height, 0, SOIL_LOAD_RGB);
 	/*
 	 * glTexImage2D 纹理生成
 	 * 1. 纹理目标
