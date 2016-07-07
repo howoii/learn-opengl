@@ -13,7 +13,6 @@ int main()
 {
 	//GLFW初始化
 	glfwMyInit(3, 3, GL_FALSE);
-
 	//创建窗口
 	GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Texture", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
