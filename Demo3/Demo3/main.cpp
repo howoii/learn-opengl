@@ -3,17 +3,41 @@
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
 
+#include "shader.h"
+
+const GLint WIDTH = 800, HEIGHT = 600;
+void glfwMyInit(int major, int minor, int resize);
+void key_callback(GLFWwindow *window, int key, int scancde, int action, int mode);
 
 int main()
 {
-	//用SOIL加载纹理图片
-	GLint width, height;
-	unsigned char *image = SOIL_load_image("container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	//GLFW初始化
+	glfwMyInit(3, 3, GL_FALSE);
+
+	//创建窗口
+	GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Texture", nullptr, nullptr);
+	glfwMakeContextCurrent(window);
+
+	glfwSetKeyCallback(window, key_callback);
+
+	glewExperimental = GL_TRUE;
+	glewInit();
+
+	glViewport(0, 0, WIDTH, HEIGHT);
+
+	Shader shader("VertexShader.vertex", "FragmentShader.frag");
 
 	//创建纹理对象
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	GLuint texture1, texture2;
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//用SOIL加载纹理图片
+	GLint width, height;
+	unsigned char *image = SOIL_load_image("sky.jpg", &width, &height, 0, SOIL_LOAD_RGB);
 	/*
 	 * glTexImage2D 纹理生成
 	 * 1. 纹理目标
@@ -27,16 +51,16 @@ int main()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	glBindTexture(GL_TEXTURE_2D, 0);
 	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//顶点数据
 	GLfloat vertices[] = {
 		//    --- 位置 ---      --- 颜色 ---    - 纹理坐标 -
 		0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f
+		-0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f
 	};
 
 	GLuint indices[] = {
@@ -63,5 +87,46 @@ int main()
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
+	while (!glfwWindowShouldClose(window))
+	{
+		glfwPollEvents();
+		//渲染开始
 
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		shader.Use();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glUniform1i(glGetUniformLocation(shader.Program, "ourTexture1"), 0);
+
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//渲染结束
+		glfwSwapBuffers(window);
+	}
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
+
+	glfwTerminate();
+	return 0;
+}
+
+void glfwMyInit(int major, int minor, int resize){
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, resize);
+}
+
+void key_callback(GLFWwindow *window, int key, int scancde, int action, int mode){
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
 }
