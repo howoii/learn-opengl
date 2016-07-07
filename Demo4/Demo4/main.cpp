@@ -148,9 +148,14 @@ int main()
 		//create an animation using matrix transform
 		glm::mat4 trans;
 		GLfloat curtime = glfwGetTime();
-		GLfloat posX = ((GLint)curtime % 100 - 50) / 50.0f;
+		GLfloat posX = curtime - (GLint(curtime)/2*2 + 1);
 		trans = glm::translate(trans, glm::vec3(posX, posX, 0.0f));
 		trans = glm::rotate(trans, glm::radians((GLfloat)curtime*50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		glm::mat4 trans1;
+		GLfloat scaleSize = sin(curtime);
+		trans1 = glm::translate(trans1, glm::vec3(-0.5f, 0.5f, 0.0f));
+		trans1 = glm::scale(trans1, glm::vec3(scaleSize, scaleSize, 0));
 
 		// Activate shader
 		ourShader.Use();
@@ -168,6 +173,8 @@ int main()
 
 		// Draw container
 		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans1));
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
