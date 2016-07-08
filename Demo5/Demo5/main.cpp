@@ -4,6 +4,8 @@
 #include <iostream>
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow *window, double xPos, double yPos);
+void scroll_callback(GLFWwindow *window, double xDelta, double yDelta);
 void do_movement();
 
 static glm::vec3 cubePositions[] = {
@@ -24,8 +26,12 @@ static glm::vec3 cameraTarget(0.0f, 0.0f, 0.0f);
 static glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 static GLfloat deltaTime = 0.0f;
 static GLfloat lastTime = 0.0f;
+static GLfloat pitch = 0;
+static GLfloat yaw = 0;
 static GLfloat fov = 45.0f;
 static GLfloat aspectRatio = GLfloat(LGL_WINDOW_WIDTH) / LGL_WINDOW_HEIGHT;
+static double xLastPos = 0.0f, yLastPos = 0.0f;
+static bool firstMouse = true;
 
 bool keys[1024];
 
@@ -34,8 +40,11 @@ int main(){
 
 	GLFWwindow *window = glfwCreateWindow(LGL_WINDOW_WIDTH, LGL_WINDOW_HEIGHT, "LearnOpenGL", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //Òþ²Ø¹â±ê²¢²¶×½
 
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	lglGlewInit();
 
@@ -153,7 +162,6 @@ int main(){
 
 void do_movement(){
 	GLfloat moveSpeed = 4.0f * deltaTime;
-	GLfloat rotateSpeed = 0.5f * deltaTime;
 	if (keys[GLFW_KEY_W])
 	{
 		cameraPos += glm::normalize(cameraDirection) * moveSpeed;
@@ -174,8 +182,6 @@ void do_movement(){
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-	GLfloat moveSpeed = 0.2f;
-	GLfloat rotateSpeed = 0.05f;
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	if (key >= 0 && key < 1024)
@@ -187,5 +193,44 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 			keys[key] = false;
 		}
+	}
+}
+
+void mouse_callback(GLFWwindow *window, double xPos, double yPos){
+	if (firstMouse)
+	{
+		xLastPos = xPos;
+		yLastPos = yPos;
+		firstMouse = false;
+	}
+	GLfloat rotateSpeed = 0.05f;
+	GLfloat xPosDelta = xPos - xLastPos;
+	GLfloat yPosDelta = yLastPos - yPos;
+	pitch += rotateSpeed * yPosDelta;
+	yaw += rotateSpeed * xPosDelta;
+	xLastPos = xPos;
+	yLastPos = yPos;
+	if (pitch > 89.0)
+	{
+		pitch = 89.0;
+	}
+	if (pitch < -89.0)
+	{
+		pitch = -89.0;
+	}
+	cameraDirection.y = sin(glm::radians(pitch));
+	cameraDirection.x = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+	cameraDirection.z = -cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+}
+
+void scroll_callback(GLFWwindow *window, double xDelta, double yDelta){
+	fov += yDelta * 2.0f;
+	if (fov > 75.0f)
+	{
+		fov = 75.0f;
+	}
+	if (fov < 1.0f)
+	{
+		fov = 1.0f;
 	}
 }
