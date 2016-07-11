@@ -5,6 +5,7 @@
 typedef struct Light
 {
 	glm::vec3 position;
+	glm::vec3 direction;
 
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
@@ -23,8 +24,17 @@ static GLfloat deltaTime = 0.0f;
 static double xLastPos = 0.0f, yLastPos = 0.0f;
 static bool firstMouse = true;
 
-glm::vec3 cube(0.0f, 0.0f, 0.0f);
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 cubes[] = {
+	glm::vec3(0.0f, 0.0f, 0.0f),
+	glm::vec3(5.0f, 0.0f, 0.0f),
+	glm::vec3(0.0f, 5.0f, 0.0f),
+	glm::vec3(0.0f, 0.0f, 5.0f),
+	glm::vec3(-5.0f, 0.0f, 0.0f),
+	glm::vec3(0.0f, 0.0f, -5.0f),
+	glm::vec3(0.0f, -5.0f, 0.0f),
+};
+
+glm::vec3 lightColor(1.0f);
 
 Light light;
 
@@ -97,14 +107,15 @@ int main(){
 
 	GLuint texture1, texture2;
 	lglCreateTexture(&texture1, GL_TEXTURE_2D, "container.png");
-	lglCreateTexture(&texture2, GL_TEXTURE_2D, "container_specular_color.png");
+	lglCreateTexture(&texture2, GL_TEXTURE_2D, "container_specular.png");
 
 	myCamera.MouseSensivity = 0.02f;
 
 	light.ambient = glm::vec3(0.1f);
-	light.diffuse = glm::vec3(0.6f);
-	light.specular = glm::vec3(0.6f);
-	light.position = glm::vec3(1.0f, 2.0f, 2.0f);
+	light.diffuse = glm::vec3(0.8f);
+	light.specular = glm::vec3(0.7f);
+	light.direction = glm::vec3(-1.0f, 0.0f, 0.0f);
+	light.position = glm::vec3(10.0f, 0.0f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -142,14 +153,12 @@ int main(){
 		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-		glm::mat4 model1;
-		model1 = glm::translate(model1, cube);
-		model1 = glm::rotate(model1, glm::radians(curTime * 45.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model1));
-
 		glUniform3f(glGetUniformLocation(myShader.Program, "viewPos"), myCamera.Position.x, myCamera.Position.y, myCamera.Position.z);
-		glUniform3f(glGetUniformLocation(myShader.Program, "light.position"), light.position.x, light.position.y, light.position.z);
+		glUniform3f(glGetUniformLocation(myShader.Program, "light.position"), myCamera.Position.x, myCamera.Position.y, myCamera.Position.z);
+		glUniform3f(glGetUniformLocation(myShader.Program, "light.spotDir"), myCamera.Front.x, myCamera.Front.y, myCamera.Front.z);
 		glUniform3f(glGetUniformLocation(myShader.Program, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
+		glUniform1f(glGetUniformLocation(myShader.Program, "light.inner"), cos(glm::radians(15.0f)));
+		glUniform1f(glGetUniformLocation(myShader.Program, "light.outter"), cos(glm::radians(20.0f)));
 
 		glUniform3f(glGetUniformLocation(myShader.Program, "light.ambient"),
 			light.ambient.x, light.ambient.y, light.ambient.z);
@@ -157,10 +166,20 @@ int main(){
 			light.diffuse.x, light.diffuse.y, light.diffuse.z);
 		glUniform3f(glGetUniformLocation(myShader.Program, "light.specular"),
 			light.specular.x, light.specular.y, light.specular.z);
+		glUniform1f(glGetUniformLocation(myShader.Program, "light.constant"), 1.0);
+		glUniform1f(glGetUniformLocation(myShader.Program, "light.linear"), 0.14);
+		glUniform1f(glGetUniformLocation(myShader.Program, "light.quadratic"), 0.007);
 
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (int i = 0; i < 7; i++)
+		{
+			glm::mat4 model;
+			model = glm::translate(model, cubes[i]);
+			model = glm::rotate(model, glm::radians(curTime * 45.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+			glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		glBindVertexArray(0);
 
 		//light shader
