@@ -2,6 +2,14 @@
 #include "Camera.h"
 #include "Shader.h"
 
+typedef struct Light
+{
+	glm::vec3 position;
+
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+};
 
 void key_callback(GLFWwindow *window, GLint key, GLint scacode, GLint action, GLint mode);
 void mouse_callback(GLFWwindow *window, double xPos, double yPos);
@@ -16,8 +24,9 @@ static double xLastPos = 0.0f, yLastPos = 0.0f;
 static bool firstMouse = true;
 
 glm::vec3 cube(0.0f, 0.0f, 0.0f);
-glm::vec3 light(1.5f, 2.0f, 1.5f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+
+Light light;
 
 int main(){
 	lglGlfwInit(3, 3, GL_FALSE);
@@ -87,10 +96,16 @@ int main(){
 	lglCreateVertexArray(&VAO, VBO, attrSize, 3);
 
 	GLuint texture1, texture2;
-	lglCreateTexture(&texture1, GL_TEXTURE_2D, "wood.png");
-	lglCreateTexture(&texture2, GL_TEXTURE_2D, "face.png");
+	lglCreateTexture(&texture1, GL_TEXTURE_2D, "container.png");
+	lglCreateTexture(&texture2, GL_TEXTURE_2D, "container_specular_color.png");
 
 	myCamera.MouseSensivity = 0.02f;
+
+	light.ambient = glm::vec3(0.1f);
+	light.diffuse = glm::vec3(0.6f);
+	light.specular = glm::vec3(0.6f);
+	light.position = glm::vec3(1.0f, 2.0f, 2.0f);
+
 	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(window))
@@ -120,8 +135,9 @@ int main(){
 		//cube shader
 		myShader.Use();
 
-		glUniform1i(glGetUniformLocation(myShader.Program, "texture1"), 0);
-		glUniform1i(glGetUniformLocation(myShader.Program, "texture2"), 0);
+		glUniform1i(glGetUniformLocation(myShader.Program, "material.diffuse"), 0);
+		glUniform1i(glGetUniformLocation(myShader.Program, "material.specular"), 1);
+		glUniform1f(glGetUniformLocation(myShader.Program, "material.shininess"), 128.0f);
 		
 		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -132,8 +148,15 @@ int main(){
 		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model1));
 
 		glUniform3f(glGetUniformLocation(myShader.Program, "viewPos"), myCamera.Position.x, myCamera.Position.y, myCamera.Position.z);
-		glUniform3f(glGetUniformLocation(myShader.Program, "lightPos"), light.x, light.y, light.z);
+		glUniform3f(glGetUniformLocation(myShader.Program, "light.position"), light.position.x, light.position.y, light.position.z);
 		glUniform3f(glGetUniformLocation(myShader.Program, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
+
+		glUniform3f(glGetUniformLocation(myShader.Program, "light.ambient"),
+			light.ambient.x, light.ambient.y, light.ambient.z);
+		glUniform3f(glGetUniformLocation(myShader.Program, "light.diffuse"),
+			light.diffuse.x, light.diffuse.y, light.diffuse.z);
+		glUniform3f(glGetUniformLocation(myShader.Program, "light.specular"),
+			light.specular.x, light.specular.y, light.specular.z);
 
 
 		glBindVertexArray(VAO);
@@ -147,8 +170,8 @@ int main(){
 		glUniformMatrix4fv(glGetUniformLocation(lightShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 		glm::mat4 model2;
-		model2 = glm::translate(model2, light);
-		model2 = glm::scale(model2, glm::vec3(1.0f));
+		model2 = glm::translate(model2, light.position);
+		model2 = glm::scale(model2, glm::vec3(0.5f));
 		glUniformMatrix4fv(glGetUniformLocation(lightShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model2));
 
 		glUniform3f(glGetUniformLocation(lightShader.Program, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
