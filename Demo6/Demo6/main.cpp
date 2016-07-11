@@ -2,51 +2,38 @@
 #include "Camera.h"
 #include "Shader.h"
 
-#include <iostream>
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
+void key_callback(GLFWwindow *window, GLint key, GLint scacode, GLint action, GLint mode);
 void mouse_callback(GLFWwindow *window, double xPos, double yPos);
 void scroll_callback(GLFWwindow *window, double xDelta, double yDelta);
 void do_movement();
 
-static glm::vec3 cubePositions[] = {
-	glm::vec3(0.0f, 0.0f, 0.0f),
-	glm::vec3(2.0f, 5.0f, -15.0f),
-	glm::vec3(-1.5f, -2.2f, -2.5f),
-	glm::vec3(-3.8f, -2.0f, -12.3f),
-	glm::vec3(2.4f, -0.4f, -3.5f),
-	glm::vec3(-1.7f, 3.0f, -7.5f),
-	glm::vec3(1.3f, -2.0f, -2.5f),
-	glm::vec3(1.5f, 2.0f, -2.5f),
-	glm::vec3(1.5f, 0.2f, -1.5f),
-	glm::vec3(-1.3f, 1.0f, -1.5f)
-};
-
-static GLfloat deltaTime = 0.0f;
+static Camera myCamera(0.0f, 0.0f);
+static bool keys[1024];
 static GLfloat lastTime = 0.0f;
-
+static GLfloat deltaTime = 0.0f;
 static double xLastPos = 0.0f, yLastPos = 0.0f;
 static bool firstMouse = true;
 
-Camera ourCamera(0.0f, 0.0f);
-bool keys[1024];
+glm::vec3 cube(0.0f, 0.0f, 0.0f);
+glm::vec3 light(1.5f, 2.0f, -1.5f);
 
 int main(){
 	lglGlfwInit(3, 3, GL_FALSE);
 
 	GLFWwindow *window = glfwCreateWindow(LGL_WINDOW_WIDTH, LGL_WINDOW_HEIGHT, "LearnOpenGL", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //Òþ²Ø¹â±ê²¢²¶×½
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
 	lglGlewInit();
-
 	glViewport(0, 0, LGL_WINDOW_WIDTH, LGL_WINDOW_HEIGHT);
 
-	Shader ourShader("textures.vs", "textures.frag");
+	Shader myShader("vertex.shader", "fragment.shader");
+	Shader lightShader("lightVertex.shader", "lightFrag.shader");
 
 	GLfloat vertices[] = {
 		// Positions   // Texture Coordinates
@@ -93,61 +80,78 @@ int main(){
 		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f
 	};
 
-	GLuint VAO, VBO;
+	GLuint VBO, VAO;
 	GLint attrSize[] = {3, 2};
-
-	lglCreateVertexArray(&VAO, &VBO, vertices, sizeof(vertices), attrSize, 2);
+	lglCreateBuffer(&VBO, vertices, sizeof(vertices));
+	lglCreateVertexArray(&VAO, VBO, attrSize, 2);
 
 	GLuint texture1, texture2;
 	lglCreateTexture(&texture1, GL_TEXTURE_2D, "wood.png");
 	lglCreateTexture(&texture2, GL_TEXTURE_2D, "face.png");
 
+	myCamera.MouseSensivity = 0.02f;
 	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(window))
 	{
+		glfwPollEvents();
+		//start
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		GLfloat curTime = glfwGetTime();
 		deltaTime = curTime - lastTime;
 		lastTime = curTime;
 
-		glfwPollEvents();
 		do_movement();
-		//render BEGIN
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		ourShader.Use();
+		//camera matrix
+		glm::mat4 view = myCamera.GetViewMatrix();
+		glm::mat4 projection;
+		projection = glm::perspective(glm::radians(myCamera.Zoom), GLfloat(LGL_WINDOW_WIDTH) / LGL_WINDOW_HEIGHT, 0.1f, 100.0f);
 
+		//texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
-		glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture1"), 0);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
-		glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture2"), 1);
 
-		//cameras view
-		glm::mat4 view;
-		view = ourCamera.GetViewMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		//cube shader
+		myShader.Use();
 
-		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(ourCamera.Zoom), GLfloat(LGL_WINDOW_WIDTH)/LGL_WINDOW_HEIGHT, 0.1f, 100.0f);
-		glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniform1i(glGetUniformLocation(myShader.Program, "texture1"), 0);
+		glUniform1i(glGetUniformLocation(myShader.Program, "texture2"), 1);
+		
+		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+		glm::mat4 model1;
+		model1 = glm::translate(model1, cube);
+		model1 = glm::rotate(model1, glm::radians(curTime * 45.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(glGetUniformLocation(myShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model1));
 
 		glBindVertexArray(VAO);
-		for (GLuint i = 0; i < 10; i++)
-		{
-			glm::mat4 model;
-			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, glm::radians(curTime*45.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-			glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
-		//render END
+
+		//light shader
+		lightShader.Use();
+
+		glUniformMatrix4fv(glGetUniformLocation(lightShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(lightShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+		glm::mat4 model2;
+		model2 = glm::translate(model2, light);
+		model2 = glm::scale(model2, glm::vec3(0.2f));
+		glUniformMatrix4fv(glGetUniformLocation(lightShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model2));
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+
+		//end
 		glfwSwapBuffers(window);
 	}
-
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glfwTerminate();
@@ -155,38 +159,17 @@ int main(){
 	return 0;
 }
 
-void do_movement(){
-	if (keys[GLFW_KEY_W])
-	{
-		ourCamera.ProcessKeyBoard(FORWARD, deltaTime);
-	}
-	if (keys[GLFW_KEY_S])
-	{
-		ourCamera.ProcessKeyBoard(BACKWARD, deltaTime);
-	}
-	if (keys[GLFW_KEY_D])
-	{
-		ourCamera.ProcessKeyBoard(RIGHT, deltaTime);
-	}
-	if (keys[GLFW_KEY_A])
-	{
-		ourCamera.ProcessKeyBoard(LEFT, deltaTime);
-	}
-}
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
+void key_callback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mode){
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
-		{
 			keys[key] = true;
-		}else if (action == GLFW_RELEASE)
-		{
+		else if (action == GLFW_RELEASE)
 			keys[key] = false;
-		}
 	}
 }
 
@@ -197,13 +180,33 @@ void mouse_callback(GLFWwindow *window, double xPos, double yPos){
 		yLastPos = yPos;
 		firstMouse = false;
 	}
-	GLfloat xPosDelta = xPos - xLastPos;
-	GLfloat yPosDelta = yLastPos - yPos;
+
+	GLfloat xOffset = xPos - xLastPos;
+	GLfloat yOffset = yLastPos - yPos;
 	xLastPos = xPos;
 	yLastPos = yPos;
-	ourCamera.ProcessMouseMovement(xPosDelta, yPosDelta);
+	myCamera.ProcessMouseMovement(xOffset, yOffset);
 }
 
 void scroll_callback(GLFWwindow *window, double xDelta, double yDelta){
-	ourCamera.ProcessMouseScroll(yDelta);
+	myCamera.ProcessMouseScroll(yDelta);
+}
+
+void do_movement(){
+	if (keys[GLFW_KEY_W])
+	{
+		myCamera.ProcessKeyBoard(FORWARD, deltaTime);
+	}
+	if (keys[GLFW_KEY_S])
+	{
+		myCamera.ProcessKeyBoard(BACKWARD, deltaTime);
+	}
+	if (keys[GLFW_KEY_D])
+	{
+		myCamera.ProcessKeyBoard(RIGHT, deltaTime);
+	}
+	if (keys[GLFW_KEY_A])
+	{
+		myCamera.ProcessKeyBoard(LEFT, deltaTime);
+	}
 }
