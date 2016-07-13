@@ -9,6 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Shader.h"
+
 const GLfloat SPEED = 2.0f;
 const GLfloat SENSITIVITY = 0.25f;
 const GLfloat ZOOM = 45.0f;
@@ -44,6 +46,14 @@ public:
 
 	glm::mat4 GetViewMatrix(){
 		return glm::lookAt(Position, Position + Front, Up);
+	}
+
+	void Attach(Shader shader, GLfloat aspect){
+		glm::mat4 view = GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
+		glm::mat4 projection = glm::perspective(glm::radians(ZOOM), aspect, 0.1f, 100.0f);
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	}
 
 	void ProcessKeyBoard(Camera_Move direct, GLfloat deltatime){

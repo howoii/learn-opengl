@@ -3,9 +3,9 @@
 
 #include "Shader.h"
 #include "Camera.h"
+#include "Cube.h"
+#include "Texture.h"
 
-// Properties
-GLuint screenWidth = 800, screenHeight = 600;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -14,7 +14,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
 // Camera
-Camera camera(0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -26,13 +26,9 @@ GLfloat lastFrame = 0.0f;
 int main()
 {
 	// Init GLFW
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+	lglGlfwInit(3, 3, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "LearnOpenGL", nullptr, nullptr); // Windowed
+	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "LearnOpenGL", nullptr, nullptr); // Windowed
 	glfwMakeContextCurrent(window);
 
 	// Set the required callback functions
@@ -44,23 +40,33 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Initialize GLEW to setup the OpenGL Function pointers
-	glewExperimental = GL_TRUE;
-	glewInit();
+	lglGlewInit();
 
 	// Define the viewport dimensions
-	glViewport(0, 0, screenWidth, screenHeight);
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+	//vertices data
+	Cube skyBox;
+	Cube container;
+
+	std::vector<const GLchar *> faces;
+	faces.push_back("skybox/right.jpg");
+	faces.push_back("skybox/left.jpg");
+	faces.push_back("skybox/top.jpg");
+	faces.push_back("skybox/bottom.jpg");
+	faces.push_back("skybox/back.jpg");
+	faces.push_back("skybox/front.jpg");
+
+	Texture texture_skybox(faces);
+
+	Texture texture_container("textures/container.png");
+
+	Shader skyboxShader("shaders/shader.vs", "shaders/shader.frag");
+	Shader containerShader("shaders/container.vs", "shaders/container.frag");
+	Shader borderShader("shaders/container.vs", "shaders/pureColor.frag");
 
 	// Setup some OpenGL options
 	glEnable(GL_DEPTH_TEST);
-
-	// Setup and compile our shaders
-	Shader shader("model.vs", "model.frag");
-
-	// Load models
-	Model ourModel("nanosuit/nanosuit.obj");
-
-	// Draw in wireframe
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -75,22 +81,33 @@ int main()
 		Do_Movement();
 
 		// Clear the colorbuffer
-		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		shader.Use();   // <-- Don't forget this one!
-		// Transformation matrices
-		glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
-		glm::mat4 view = camera.GetViewMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		//texture binding
+		texture_skybox.Active(0);
+		texture_container.Active(1);
 
-		// Draw the loaded model
-		glm::mat4 model;
-		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		ourModel.Draw(shader);
+		//view matrix and projection matrix creation
+		/*glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 100.0f);*/
+
+		//draw skybox
+		skyboxShader.Use();
+
+		texture_skybox.Apply(skyboxShader, "skybox");
+		camera.Attach(skyboxShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
+
+		skyBox.scale(6.0f);
+		skyBox.Draw(skyboxShader);
+
+		containerShader.Use();
+
+		texture_container.Apply(containerShader, "texture0");
+		camera.Attach(containerShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
+
+		container.scale(0.5);
+		container.Draw(containerShader);
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
@@ -99,8 +116,6 @@ int main()
 	glfwTerminate();
 	return 0;
 }
-
-#pragma region "User input"
 
 // Moves/alters the camera positions based on user input
 void Do_Movement()
