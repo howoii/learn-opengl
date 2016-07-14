@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Cube.h"
+#include "Plane.h"
 #include "Texture.h"
 
 
@@ -14,7 +15,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
 // Camera
-Camera camera(0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+Camera camera(0.0f, 0.0f, glm::vec3(0.0f, 1.0f, 1.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -46,9 +47,13 @@ int main()
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	//vertices data
-	Cube skyBox;
+	Cube skyBox(10.0f);
 	Cube container;
+	Plane ground(10.0f, 10.0f);
+	Plane grass(0.5f, 1.0f);
+	Plane windowPlane;
 
+	//Create Texture
 	std::vector<const GLchar *> faces;
 	faces.push_back("skybox/right.jpg");
 	faces.push_back("skybox/left.jpg");
@@ -58,15 +63,59 @@ int main()
 	faces.push_back("skybox/front.jpg");
 
 	Texture texture_skybox(faces);
-
 	Texture texture_container("textures/container.png");
+	Texture texture_grass("textures/grass.png", GL_TRUE);
+	Texture texture_ground("textures/grassGround.png");
+	Texture texture_window("textures/window.png", GL_TRUE);
 
+	//Texture binding
+	texture_skybox.Active(0);
+	texture_container.Active(1);
+	texture_grass.Active(2);
+	texture_ground.Active(3);
+	texture_window.Active(4);
+
+	//Create Shader
 	Shader skyboxShader("shaders/shader.vs", "shaders/shader.frag");
 	Shader containerShader("shaders/container.vs", "shaders/container.frag");
-	Shader borderShader("shaders/container.vs", "shaders/pureColor.frag");
+	Shader planeShader("shaders/plane.vs", "shaders/plane.frag");
+	Shader screenShader("shaders/screen.vs", "shaders/screen.frag");
+
+	/////////////////////////////////////////////////////////////
+	// Create a frame buffer with color,depth and stencil buffer
+	/////////////////////////////////////////////////////////////
+	GLuint FBO;
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	//Texture Buffer
+	GLuint texColorBuffer;
+	glGenTextures(1, &texColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
+
+	//Render Buffer
+	GLuint RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "ERROR::FRAMERBUFFER:: Framebuffer is not complete!" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Setup some OpenGL options
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -80,17 +129,21 @@ int main()
 		glfwPollEvents();
 		Do_Movement();
 
+		/////////////////////////////////////////////////////
+		// First render pass: Mirror texture...
+		// Bind to framebuffer and draw to color texture as 
+		// we normally would, but with the view camera 
+		// reversed.
+		// //////////////////////////////////////////////////
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
 		// Clear the colorbuffer
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//texture binding
-		texture_skybox.Active(0);
-		texture_container.Active(1);
+		glEnable(GL_DEPTH_TEST);
 
-		//view matrix and projection matrix creation
-		/*glm::mat4 view = camera.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 100.0f);*/
+		camera.Front = -camera.Front; //reverse the view camera
 
 		//draw skybox
 		skyboxShader.Use();
@@ -98,7 +151,6 @@ int main()
 		texture_skybox.Apply(skyboxShader, "skybox");
 		camera.Attach(skyboxShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
 
-		skyBox.scale(6.0f);
 		skyBox.Draw(skyboxShader);
 
 		containerShader.Use();
@@ -106,12 +158,61 @@ int main()
 		texture_container.Apply(containerShader, "texture0");
 		camera.Attach(containerShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
 
-		container.scale(0.5);
+		container.translate(0.0f, 0.51f, 0.0f);
 		container.Draw(containerShader);
+
+		/////////////////////////////////////////////////////
+		// Second render pass: Draw as normal
+		// //////////////////////////////////////////////////
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		camera.Front = -camera.Front;
+
+		skyboxShader.Use();
+
+		texture_skybox.Apply(skyboxShader, "skybox");
+		camera.Attach(skyboxShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
+
+		skyBox.Draw(skyboxShader);
+
+		containerShader.Use();
+
+		texture_container.Apply(containerShader, "texture0");
+		camera.Attach(containerShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
+
+		container.translate(0.0f, 0.51f, 0.0f);
+		container.Draw(containerShader);
+	/*
+		planeShader.Use();
+
+		camera.Attach(planeShader, GLfloat(WINDOW_WIDTH) / WINDOW_HEIGHT);
+
+		texture_ground.Apply(planeShader, "texture0", 5.0f);
+		ground.translate(0.0f, 0.0f, 0.0f);
+		ground.Draw(planeShader);
+
+		texture_grass.Apply(planeShader, "texture0");
+		grass.rotate(90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		grass.translate(0.0f, 0.5f, 2.0f);
+		grass.Draw(planeShader);
+	*/
+
+		//Draw plane using texColorBuffer as texture
+		screenShader.Use();
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+		glUniform1i(glGetUniformLocation(screenShader.Program, "texture0"), 5);
+		windowPlane.Draw(screenShader);
+
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
 	}
+
+	glDeleteFramebuffers(1, &FBO);
 
 	glfwTerminate();
 	return 0;

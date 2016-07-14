@@ -10,10 +10,10 @@
 class Texture
 {
 public:
-	Texture(const GLchar *texPath);
+	Texture(const GLchar *texPath, GLboolean alpha = GL_FALSE);
 	Texture(std::vector<const GLchar *> faces);
 	void Active(GLuint texIndex);
-	void Apply(Shader shader, const GLchar *samplerName);
+	void Apply(Shader shader, const GLchar *samplerName, GLfloat repeat = 1.0f);
 	~Texture();
 
 private:
@@ -22,11 +22,11 @@ private:
 	GLenum TexTarget;
 };
 
-Texture::Texture(const GLchar *texPath)
+Texture::Texture(const GLchar *texPath, GLboolean alpha)
 	:TexIndex(-1)
 {
 	TexTarget = GL_TEXTURE_2D;
-	TexID = lglLoadTexture2D(texPath);
+	TexID = lglLoadTexture2D(texPath, alpha);
 }
 
 Texture::Texture(std::vector<const GLchar *> faces){
@@ -45,12 +45,13 @@ void Texture::Active(GLuint texIndex){
 	this->TexIndex = texIndex;
 }
 
-void Texture::Apply(Shader shader, const GLchar *samplerName){
+void Texture::Apply(Shader shader, const GLchar *samplerName, GLfloat repeat){
 	if (TexIndex < 0)
 	{
 		std::cout << "ERROR::TEXTURE::Apply\n Texture should be active before apply" << std::endl;
 	}
 	glUniform1i(glGetUniformLocation(shader.Program, samplerName), TexIndex);
+	glUniform1f(glGetUniformLocation(shader.Program, "repeat"), repeat);
 }
 
 Texture::~Texture()

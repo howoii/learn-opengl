@@ -5,8 +5,10 @@ in vec2 TexCoords;
 
 out vec4 color;
 
+uniform float repeat;
 uniform sampler2D texture0;
 
 void main(){
-	color = texture(texture0, TexCoords);
+	vec4 texColor = texture(texture0, TexCoords * repeat);
+	color = texColor;
 }
