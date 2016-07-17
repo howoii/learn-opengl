@@ -31,6 +31,7 @@ inline GLvoid lglGlfwInit(GLint major, GLint minor, GLint resizable){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, resizable);
+	glfwWindowHint(GLFW_SAMPLES, 4);
 }
 
 /*

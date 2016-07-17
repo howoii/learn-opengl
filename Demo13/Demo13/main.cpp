@@ -6,6 +6,7 @@
 #include "LearnOpenGL/Cube.h"
 #include "LearnOpenGL/Plane.h"
 #include "LearnOpenGL/Texture.h"
+#include "PointLight.h"
 
 
 // Function prototypes
@@ -16,6 +17,12 @@ void Do_Movement();
 
 // Camera
 Camera camera(0.0f, 0.0f, glm::vec3(0.0f, 1.0f, 1.0f));
+
+//Light
+PointLight pointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(2.0f), POINT_LIGHT100);
+
+GLfloat shininess = 64.0f;
+
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -28,7 +35,6 @@ int main()
 {
 	// Init GLFW
 	lglGlfwInit(3, 3, GL_FALSE);
-	glfwWindowHint(GLFW_SAMPLES, 4);
 
 	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "LearnOpenGL", nullptr, nullptr); // Windowed
 	glfwMakeContextCurrent(window);
@@ -48,23 +54,17 @@ int main()
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	//vertices data
-	GLfloat points[] = {
-		-0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 1.0f, 1.0f, 0.0f
-	};
-
-	GLint attrsize[] = { 2, 3 };
-	GLuint VBO = lglCreateBuffer(points, sizeof(points));
-	GLuint VAO = lglCreateVertexArray(VBO, attrsize, 2);
+	Plane ground(10.f, 10.0f);
 
 	//Texture binding
-	
+	Texture texture_wood("textures/wood.png");
+
+	texture_wood.Active(0);
 
 	//Create Shader
-	Shader pointShader("shaders/points.vs", "shaders/points.frag", "shaders/points.gs");
+	Shader groundShader("shaders/ground.vs", "shaders/ground.frag");
 
+	groundShader.BindUniformBlock("Camera",0);
 
 	camera.BindUniformBuffer(0);
 
@@ -88,13 +88,17 @@ int main()
 		Do_Movement();
 
 		// Clear the colorbuffer
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		pointShader.Use();
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_POINTS, 0, 4);
-		glBindVertexArray(0);
+		groundShader.Use();
+		pointLight.Apply(groundShader, "pointLight");
+		texture_wood.Apply(groundShader, "Diffuse", 3.0f);
+		texture_wood.Apply(groundShader, "Specular", 3.0f);
+		glUniform1f(glGetUniformLocation(groundShader.Program, "shininess"), shininess);
+		glUniform3f(glGetUniformLocation(groundShader.Program, "viewPos"), 
+			camera.Position.x, camera.Position.y, camera.Position.z);
+		ground.Draw(groundShader);
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
