@@ -22,6 +22,9 @@
 
 const GLint WINDOW_WIDTH = 800;
 const GLint WINDOW_HEIGHT = 600;
+
+const GLint SHADOW_WIDTH = 1024;
+const GLint SHADOW_HEIGHT = 1024;
 /*
  * Initialize the GLFW window
 */
@@ -88,6 +91,22 @@ inline GLuint lglCreateColorBuffer(GLsizei width, GLsizei height){
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return texColorBuffer;
+}
+
+inline GLuint lglCreateDepthBuffer(GLsizei width, GLsizei height){
+	GLuint depthMap;
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return depthMap;
 }
 
 inline GLuint lglCreateRenderBuffer(GLsizei width, GLsizei height){
@@ -195,8 +214,23 @@ inline GLuint lglCreateShaderStage(GLenum type, const GLchar *shaderCode){
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
+		std::string shaderType;
+		switch (type)
+		{
+		case GL_VERTEX_SHADER:
+			shaderType = "VERTEX";
+			break;
+		case GL_FRAGMENT_SHADER:
+			shaderType = "FREGMANT";
+			break;
+		case GL_GEOMETRY_SHADER:
+			shaderType = "GEOMETRY";
+			break;
+		default:
+			break;
+		}
 		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		std::cout << "ERROR::SHADER::"<< shaderType <<"::COMPILATION_FAILED\n" << infoLog << std::endl;
 	}
 	return shader;
 }
