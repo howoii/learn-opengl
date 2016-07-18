@@ -124,5 +124,5 @@ void main()
 	vec3 Point = BlinnPointLight(pointLight, norm, FragPos, viewDir, shadow);
 	vec3 Direct = CalcDirLight(dirLight, norm, viewDir, shadow);
 
-	color = vec4(Direct, 1.0);
+	color = vec4(Point, 1.0);
 }

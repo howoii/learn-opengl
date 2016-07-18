@@ -12,6 +12,9 @@ layout (std140) uniform Camera
 uniform mat4 model;
 uniform mat4 lightSpaceMatrix;
 
+
+uniform sampler2D NormalTex;
+
 out vec3 Normal;
 out vec3 FragPos;
 out vec2 TexCoords;
@@ -20,7 +23,8 @@ out vec4 FragPosLightSpace;
 void main()
 {
 	gl_Position = projection * view * model * vec4(position, 1.0);
-	Normal = mat3(transpose(inverse(mat3(model)))) * normal;
+	vec3 norm = normalize(texture(NormalTex, texCoords).rgb * 2.0 - 1.0);
+	Normal = mat3(transpose(inverse(mat3(model)))) * norm;
 	FragPos = vec3(model * vec4(position, 1.0));
 	TexCoords = texCoords;
 	FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);

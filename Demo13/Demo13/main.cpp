@@ -20,10 +20,10 @@ void Do_Movement();
 Camera camera(0.0f, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 
 //Light
-PointLight pointLight(glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.2f), glm::vec3(1.0f), glm::vec3(1.0f), POINT_LIGHT100);
-DirectLight dirLight(glm::vec3(-1.0f), glm::vec3(0.2f), glm::vec3(1.0f), glm::vec3(1.0f));
+PointLight pointLight(glm::vec3(1.0f, 3.0f, 1.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(100.0f), POINT_LIGHT100);
+DirectLight dirLight(glm::vec3(-1.0f), glm::vec3(0.2f), glm::vec3(0.0f), glm::vec3(1.0f));
 
-GLfloat shininess = 16.0f;
+GLfloat shininess = 1024.0f;
 
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
@@ -57,12 +57,13 @@ int main()
 
 	//vertices data
 	Plane ground(10.f, 10.0f);
-	Cube box(0.5f);
+	Cube box(2.0f);
 	Plane screen;
 
 	//Texture binding
 	Texture texture_wood("textures/wood.png");
-	Texture texture_box("textures/container.png");
+	Texture texture_box("textures/brickwall.jpg");
+	Texture normal_wall("textures/brickwall_normal.jpg");
 
 	//Create Shader
 	Shader groundShader("shaders/ground.vs", "shaders/ground.frag");
@@ -114,7 +115,7 @@ int main()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		box.translate(0.0f, 0.25f, 0.0f);
+		box.translate(0.0f, 1.0f, 0.0f);
 		box.Draw(depthShader);
 		ground.Draw(depthShader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -137,14 +138,17 @@ int main()
 
 		texture_wood.Active(0);
 		texture_box.Active(1);
+		normal_wall.Active(3);
 
 		texture_wood.Apply(groundShader, "Diffuse", 3.0f);
 		texture_wood.Apply(groundShader, "Specular", 3.0f);
+		normal_wall.Apply(groundShader, "NormalTex", 3.0f);
 		ground.Draw(groundShader);
 
 		texture_box.Apply(groundShader, "Diffuse");
 		texture_box.Apply(groundShader, "Specular");
-		box.translate(0.0f, 0.25f, 0.0f);
+		normal_wall.Apply(groundShader, "NormalTex");
+		box.translate(0.0f, 1.0f, 0.0f);
 		box.Draw(groundShader);
 
 		screenShader.Use();
