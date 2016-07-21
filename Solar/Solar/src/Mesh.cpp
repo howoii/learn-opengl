@@ -94,22 +94,22 @@ Mesh Mesh::GetCubeMesh(){
 }
 
 Mesh Mesh::GetSphereMesh(GLfloat radius){
-	GLint division = 12;
+	GLint division = int(64 * radius)/4 * 4;
 
 	std::vector<Vertex> vertices;
 	Vertex vertex;
 	glm::vec3 positions[4];
 	glm::vec2 texCoords[4];
-	GLuint indices[] = { 0, 3, 2, 2, 1, 0 };
+	GLuint indices[] = { 0, 1, 2, 2, 3, 0 };
 
 	GLfloat alpha;
 	GLfloat beta;
 
 	GLfloat angleStrip = 360.0f / division;
 
-	for (GLuint y = 0; y < division / 2; y++){
+	for (GLint y = 0; y < division / 2; y++){
 		beta = (y - division / 4) * angleStrip;
-		for (GLuint x = 0; x < division; x++)
+		for (GLint x = 0; x < division; x++)
 		{
 			alpha = x * angleStrip;
 			//bottom right
@@ -126,11 +126,12 @@ Mesh Mesh::GetSphereMesh(GLfloat radius){
 			texCoords[3] = glm::vec2(GLfloat(x) / division, GLfloat(y + 1) * 2.0 / division);
 			for (GLuint i = 0; i < 6; i++)
 			{
-				vertex.Postion = positions[indices[i]];
+				GLuint p = indices[i];
+				vertex.Postion = positions[p];
 				vertex.Normal = vertex.Postion;
-				vertex.TexCoords = texCoords[indices[i]];
+				vertex.TexCoords = texCoords[p];
+				vertices.push_back(vertex);
 			}
-			vertices.push_back(vertex);
 		}
 	}
 	return Mesh(vertices);

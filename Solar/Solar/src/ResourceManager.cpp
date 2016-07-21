@@ -85,7 +85,7 @@ Texture2D ResourceManager::loadTextureFromFile(const GLchar *file, GLboolean alp
 	}
 
 	int width, height;
-	unsigned char *image = SOIL_load_image(file, &width, &height, 0, texture.Internal_Format == GL_RGBA ? SOIL_LOAD_RGB : SOIL_LOAD_RGBA);
+	unsigned char *image = SOIL_load_image(file, &width, &height, 0, texture.Internal_Format != GL_RGBA ? SOIL_LOAD_RGB : SOIL_LOAD_RGBA);
 	texture.Generate(width, height, image);
 	return texture;
 }
