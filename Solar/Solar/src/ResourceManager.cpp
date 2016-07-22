@@ -6,6 +6,7 @@
 
 std::map<std::string, Shader> ResourceManager::Shaders;
 std::map<std::string, Texture2D> ResourceManager::Textures;
+std::map<std::string, Mesh> ResourceManager::Meshes;
 
 Shader ResourceManager::LoadShader(const GLchar *vShaderFile, const GLchar *fShaderFile, const GLchar *gShaderFile, std::string name){
 	Shaders[name] = loadShaderFromFile(vShaderFile, fShaderFile, gShaderFile);
@@ -22,6 +23,16 @@ Texture2D ResourceManager::LoadTexture(const GLchar *file, GLboolean alpha, std:
 Texture2D ResourceManager::GetTexture(std::string name){
 	return Textures[name];
 }
+
+Mesh ResourceManager::StoreMesh(Mesh mesh, std::string name){
+	Meshes[name] = mesh;
+	return Meshes[name];
+}
+
+Mesh ResourceManager::GetMesh(std::string name){
+	return Meshes[name];
+}
+
 
 void ResourceManager::Clear(){
 	for (auto iter : Shaders)

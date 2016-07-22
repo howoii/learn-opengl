@@ -20,10 +20,11 @@ class Mesh
 public:
 	GLuint VAO, VBO;
 	std::vector<Vertex> vertices;
+	Mesh();
 	Mesh(std::vector<Vertex> vertices);
 	static Mesh GetPlaneMesh();
 	static Mesh GetCubeMesh();
-	static Mesh GetSphereMesh(GLfloat radius);
+	static Mesh GetSphereMesh(GLfloat radius = 1.0f);
 	static glm::vec3 calcPos(GLfloat radius, GLfloat alpha, GLfloat beta);
 	~Mesh();
 

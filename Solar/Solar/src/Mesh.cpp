@@ -5,6 +5,8 @@ Mesh::Mesh(std::vector<Vertex> vertices){
 	this->setupMesh();
 }
 
+Mesh::Mesh(){}
+
 Mesh::~Mesh(){}
 
 Mesh Mesh::GetPlaneMesh(){
@@ -95,6 +97,7 @@ Mesh Mesh::GetCubeMesh(){
 
 Mesh Mesh::GetSphereMesh(GLfloat radius){
 	GLint division = int(64 * radius)/4 * 4;
+	GLfloat angleStrip = 360.0f / division;
 
 	std::vector<Vertex> vertices;
 	Vertex vertex;
@@ -104,8 +107,6 @@ Mesh Mesh::GetSphereMesh(GLfloat radius){
 
 	GLfloat alpha;
 	GLfloat beta;
-
-	GLfloat angleStrip = 360.0f / division;
 
 	for (GLint y = 0; y < division / 2; y++){
 		beta = (y - division / 4) * angleStrip;
