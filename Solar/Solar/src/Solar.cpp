@@ -4,9 +4,12 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "PlanetObject.h"
+#include "SolarMath.h"
 
 
-Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 0.0f, 150.0f));
+Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(-30.0f, 10.0f, 100.0f));
+PlanetObject *planet;
 
 Solar::Solar(GLuint width, GLuint height)
 	:Width(width), Height(height)
@@ -21,8 +24,21 @@ Solar::~Solar(){
 void Solar::Init(){
 	Shader ourShader = ResourceManager::LoadShader("shaders/basic.vs", "shaders/basic.frag", nullptr, "basic");
 	ourShader.SetUniformBlock("Camera", 0);
-	ResourceManager::LoadTexture("textures/planet.png", GL_FALSE, "planet");
+	ResourceManager::LoadTexture("textures/planet.png", GL_FALSE, "saturn");
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
+
+	Mesh *sphere = &ResourceManager::Meshes["sphere"];
+	Texture2D *saturnTexture = &ResourceManager::Textures["saturn"];
+
+	planet = new PlanetObject(glm::vec3(0.0f), sphere, saturnTexture);
+	planet->T = 1.0f;
+	planet->A = 80.0f;
+	planet->¦Å = 0.8f;
+	planet->I = 50.0f;
+	planet->¦Ø = 0.0f;
+	planet->¦¸ = 0.0f;
+	planet->M = 0.0f;
+	planet->UpdatePosition(glfwGetTime());
 
 	camera.BindUniformBuffer(0);
 }
@@ -49,25 +65,26 @@ void Solar::ProcessInput(GLfloat dt){
 }
 
 void Solar::Update(GLfloat dt){
-
+	planet->UpdatePosition(glfwGetTime());
 }
 
 void Solar::Render(){
 	Shader ourShader = ResourceManager::GetShader("basic").Use();
 
 	glm::mat4 model;
+	model = glm::translate(model, planet->Position);
 	model = glm::rotate(model, glm::radians(60.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	model = glm::rotate(model, glm::radians(60.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(20.0f));
 	ourShader.SetMatrix4("model", model);
 
+	std::cout << planet->Position.x <<"-"<< planet->Position.y <<"-"<< planet->Position.z << std::endl;
+
 	glActiveTexture(GL_TEXTURE0);
-	ResourceManager::GetTexture("planet").Bind();
+	planet->texture->Bind();
 	ResourceManager::GetShader("basic").SetInteger("texture0", 0);
 
-	Mesh mesh = ResourceManager::GetMesh("sphere");
-
-	glBindVertexArray(mesh.VAO);
-	glDrawArrays(GL_TRIANGLES, 0, mesh.vertices.size());
+	glBindVertexArray(planet->mesh->VAO);
+	glDrawArrays(GL_TRIANGLES, 0, planet->mesh->vertices.size());
 	glBindVertexArray(0);
 }

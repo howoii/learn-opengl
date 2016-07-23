@@ -81,10 +81,12 @@
     <ClInclude Include="include\Common.h" />
     <ClInclude Include="include\InputManager.h" />
     <ClInclude Include="include\Mesh.h" />
+    <ClInclude Include="include\PlanetObject.h" />
     <ClInclude Include="include\ResourceManager.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\SObject.h" />
     <ClInclude Include="include\Solar.h" />
+    <ClInclude Include="include\SolarMath.h" />
     <ClInclude Include="include\Texture2D.h" />
   </ItemGroup>
   <ItemGroup>
@@ -92,9 +94,12 @@
     <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\PlanetObject.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\SObject.cpp" />
     <ClCompile Include="src\Solar.cpp" />
+    <ClCompile Include="src\SolarMath.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

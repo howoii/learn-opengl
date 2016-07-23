@@ -9,16 +9,13 @@
 class SObject
 {
 public:
-	glm::vec3 position;
-	glm::mat4 model;
+	glm::vec3 Position;
 
 	Mesh *mesh;
 	Texture2D *texture;
 
+	SObject(glm::vec3 pos, Mesh *mesh, Texture2D *texture);
 	void MoveTo(glm::vec3 pos);
-	void RotateTo(GLfloat angle, glm::vec3 dir);
-	void Draw(Shader shader);
-	SObject();
 	~SObject();
 
 private:
