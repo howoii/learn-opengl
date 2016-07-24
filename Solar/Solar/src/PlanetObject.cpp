@@ -20,9 +20,9 @@ void  PlanetObject::UpdatePosition(GLfloat time){
 	GLfloat cosI = glm::cos(glm::radians(this->I));
 	GLfloat sinBigOmega = glm::sin(glm::radians(this->¦¸));
 	GLfloat cosBigOmega = glm::cos(glm::radians(this->¦¸));
-	posX = r * (cosOmegaTheta*cosBigOmega - sinOmegaTheta*sinBigOmega*cosI);
-	posZ = r * (cosOmegaTheta*sinBigOmega + sinOmegaTheta*cosBigOmega*cosI);
-	posY = r * sinOmegaTheta*sinI;
+	posX =  r * (cosOmegaTheta*cosBigOmega - sinOmegaTheta*sinBigOmega*cosI);
+	posZ = -r * (cosOmegaTheta*sinBigOmega + sinOmegaTheta*cosBigOmega*cosI);
+	posY =  r * sinOmegaTheta*sinI;
 
 	this->Position = glm::vec3(posX, posY, posZ);
 }

@@ -8,8 +8,9 @@
 #include "SolarMath.h"
 
 
-Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(-30.0f, 10.0f, 100.0f));
+Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 0.0f, 100.0f));
 PlanetObject *planet;
+PlanetObject *sun;
 
 Solar::Solar(GLuint width, GLuint height)
 	:Width(width), Height(height)
@@ -24,21 +25,25 @@ Solar::~Solar(){
 void Solar::Init(){
 	Shader ourShader = ResourceManager::LoadShader("shaders/basic.vs", "shaders/basic.frag", nullptr, "basic");
 	ourShader.SetUniformBlock("Camera", 0);
-	ResourceManager::LoadTexture("textures/planet.png", GL_FALSE, "saturn");
+	ResourceManager::LoadTexture("textures/planet_textures/texture_earth_clouds.jpg", GL_FALSE, "earth");
+	ResourceManager::LoadTexture("textures/planet_textures/texture_sun.jpg", GL_FALSE, "sun");
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
 
 	Mesh *sphere = &ResourceManager::Meshes["sphere"];
-	Texture2D *saturnTexture = &ResourceManager::Textures["saturn"];
+	Texture2D *saturnTexture = &ResourceManager::Textures["earth"];
+	Texture2D *sunTexture = &ResourceManager::Textures["sun"];
 
 	planet = new PlanetObject(glm::vec3(0.0f), sphere, saturnTexture);
-	planet->T = 1.0f;
-	planet->A = 80.0f;
-	planet->¦Å = 0.8f;
-	planet->I = 50.0f;
-	planet->¦Ø = 0.0f;
+	planet->T = 5.0f;
+	planet->A = 100.0f;
+	planet->¦Å = 0.517f;
+	planet->I = 0.0f;
+	planet->¦Ø = 102.3f;
 	planet->¦¸ = 0.0f;
 	planet->M = 0.0f;
 	planet->UpdatePosition(glfwGetTime());
+
+	sun = new PlanetObject(glm::vec3(0.0f), sphere, sunTexture);
 
 	camera.BindUniformBuffer(0);
 }
@@ -75,16 +80,27 @@ void Solar::Render(){
 	model = glm::translate(model, planet->Position);
 	model = glm::rotate(model, glm::radians(60.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	model = glm::rotate(model, glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(20.0f));
+	model = glm::scale(model, glm::vec3(5.0f));
 	ourShader.SetMatrix4("model", model);
 
 	std::cout << planet->Position.x <<"-"<< planet->Position.y <<"-"<< planet->Position.z << std::endl;
 
 	glActiveTexture(GL_TEXTURE0);
 	planet->texture->Bind();
-	ResourceManager::GetShader("basic").SetInteger("texture0", 0);
+	ourShader.SetInteger("texture0", 0);
 
 	glBindVertexArray(planet->mesh->VAO);
 	glDrawArrays(GL_TRIANGLES, 0, planet->mesh->vertices.size());
+	glBindVertexArray(0);
+
+	model = glm::mat4();
+	model = glm::translate(model, sun->Position);
+	model = glm::scale(model, glm::vec3(20.0f));
+	ourShader.SetMatrix4("model", model);
+	glActiveTexture(GL_TEXTURE1);
+	sun->texture->Bind();
+	ourShader.SetInteger("texture0", 1);
+	glBindVertexArray(sun->mesh->VAO);
+	glDrawArrays(GL_TRIANGLES, 0, sun->mesh->vertices.size());
 	glBindVertexArray(0);
 }
