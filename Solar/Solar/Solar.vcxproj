@@ -82,6 +82,7 @@
     <ClInclude Include="include\InputManager.h" />
     <ClInclude Include="include\Mesh.h" />
     <ClInclude Include="include\PlanetObject.h" />
+    <ClInclude Include="include\PointLightRenderer.h" />
     <ClInclude Include="include\ResourceManager.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\SObject.h" />
@@ -96,6 +97,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\PlanetObject.cpp" />
+    <ClCompile Include="src\PointLightRenderer.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\SObject.cpp" />

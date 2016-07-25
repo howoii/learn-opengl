@@ -24,6 +24,9 @@ public:
 	GLfloat D; //自转周期
 	GLfloat O; //自转轴倾角(obliguity)
 
+	//其他参数
+	GLfloat Reflect; //反射率
+
 	GLfloat Rotation; //自转角度
 
 	PlanetObject();

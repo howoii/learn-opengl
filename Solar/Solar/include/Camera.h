@@ -4,7 +4,7 @@
 #include "Common.h"
 #include "Shader.h"
 
-const GLfloat SPEED = 20.0f;
+const GLfloat SPEED = 50.0f;
 const GLfloat SENSITIVITY = 0.02f;
 const GLfloat ZOOM = 45.0f;
 

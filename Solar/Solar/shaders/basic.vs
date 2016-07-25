@@ -10,6 +10,8 @@ layout (std140) uniform Camera
 };
 
 out vec2 TexCoords;
+out vec3 Normal;
+out vec3 FragPos;
 
 uniform mat4 model;
 
@@ -17,4 +19,6 @@ void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0f);
     TexCoords = texCoords;
+	Normal = mat3(transpose(inverse(model))) * normal;
+	FragPos = vec3(model * vec4(position, 1.0));
 }

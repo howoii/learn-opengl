@@ -12,8 +12,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void cursor_enter_callback(GLFWwindow* window, int entered);
 
-const GLuint SCREEN_WIDTH = 800;
-const GLuint SCREEN_HEIGHT = 600;
+const GLuint SCREEN_WIDTH = 1200;
+const GLuint SCREEN_HEIGHT = 900;
 
 Solar solar(SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
 
 		glfwPollEvents();
 
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 

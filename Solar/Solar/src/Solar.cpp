@@ -7,9 +7,11 @@
 #include "PlanetObject.h"
 #include "Sun.h"
 #include "SolarMath.h"
+#include "PointLightRenderer.h"
 
 
-Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 0.0f, 600.0f));
+Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 60.0f, 0.0f));
+PointLightRenderer *PLRenderer;
 std::vector<PlanetObject> planets;
 Sun sun;
 
@@ -24,7 +26,6 @@ Solar::~Solar(){
 }
 
 void Solar::Init(){
-
 	std::string textureDir = "textures";
 	std::string planetNames[SOLAR_PLANET_NUMBERS] = { "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune" };
 
@@ -36,6 +37,7 @@ void Solar::Init(){
 	}
 	ResourceManager::LoadTexture("textures/planet_textures/texture_sun.jpg", GL_FALSE, "sun");
 
+	ResourceManager::LoadShader("shaders/basic.vs", "shaders/pointLight.frag", nullptr, "pointLight").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/basic.frag", nullptr, "basic").SetUniformBlock("camera", 0);
 
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
@@ -50,9 +52,11 @@ void Solar::Init(){
 		Texture2D *texture = ResourceManager::GetTexturePointer(planetNames[i]);
 		planets.push_back(PlanetObject(mesh, texture, planetPara[i]));
 	}
+	sun = Sun(mesh, ResourceManager::GetTexturePointer("sun"), planetPara.back());
 
-	sun = Sun(mesh, ResourceManager::GetTexturePointer("sun"), planetPara.back()[0]);
-
+	PLRenderer = new PointLightRenderer(ResourceManager::GetShaderPointer("pointLight"),
+		glm::vec3(0.0f), 0.02f, sun.Brightness/2.0f);
+	
 	camera.BindUniformBuffer(0);
 }
 
@@ -80,42 +84,19 @@ void Solar::ProcessInput(GLfloat dt){
 void Solar::Update(GLfloat dt){
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
-		planets[i].UpdatePosition(glfwGetTime());
+		//planets[i].UpdatePosition(glfwGetTime());
 		planets[i].UpdateRotation(glfwGetTime());
 	}
 }
 
 void Solar::Render(){
-	Shader ourShader = ResourceManager::GetShader("basic").Use();
-
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
-		glm::mat4 model;
-		model = glm::translate(model, planets[i].Position * glm::vec3(SOLAR_AXIS_SCALE));
-		model = glm::rotate(model, glm::radians(planets[i].O), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::rotate(model, glm::radians(planets[i].Rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(planets[i].R * SOLAR_PLANET_SCALE * SOLAR_AXIS_SCALE));
-		ourShader.SetMatrix4("model", model);
-	
-		glActiveTexture(GL_TEXTURE0);
-		planets[i].texture->Bind();
-		ourShader.SetInteger("texture0", 0);
-
-		glBindVertexArray(planets[i].mesh->VAO);
-		glDrawArrays(GL_TRIANGLES, 0, planets[i].mesh->vertices.size());
-		glBindVertexArray(0);
+		PLRenderer->Render(&planets[i], planets[i].Reflect, camera.Position);
 	}
 
-	//std::cout << planet->Position.x <<"-"<< planet->Position.y <<"-"<< planet->Position.z << std::endl;
-
-
-	glm::mat4 model = glm::mat4();
-	model = glm::scale(model, glm::vec3(sun.Radius * SOLAR_SUN_SCALE * SOLAR_AXIS_SCALE));
-	ourShader.SetMatrix4("model", model);
-	glActiveTexture(GL_TEXTURE0);
-	sun.texture->Bind();
-	ourShader.SetInteger("texture0", 0);
-	glBindVertexArray(sun.mesh->VAO);
-	glDrawArrays(GL_TRIANGLES, 0, sun.mesh->vertices.size());
-	glBindVertexArray(0);
+	SObject *obj = &sun;
+	Shader basicShader = ResourceManager::GetShader("basic").Use();
+	basicShader.SetFloat("brightness", sun.Brightness);
+	obj->Draw(basicShader);
 }

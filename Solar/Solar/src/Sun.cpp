@@ -5,10 +5,11 @@ Sun::Sun(){}
 
 Sun::~Sun(){}
 
-Sun::Sun(Mesh *mesh, Texture2D *texture, GLfloat radius)
+Sun::Sun(Mesh *mesh, Texture2D *texture, std::vector<GLfloat> para)
 	:SObject(mesh, texture)
 {
-	this->Radius = SolarMath::AU(radius);
+	this->Radius = SolarMath::AU(para[0]);
+	this->Brightness = para[1];
 }
 
 void Sun::Draw(Shader shader){

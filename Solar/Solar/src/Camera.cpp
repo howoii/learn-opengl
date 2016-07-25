@@ -30,7 +30,7 @@ glm::mat4 Camera::GetViewMatrix(){
 }
 
 glm::mat4 Camera::GetProjectionMatrix(){
-	return glm::perspective(glm::radians(Zoom), Aspect, 0.1f, 1000.0f);
+	return glm::perspective(glm::radians(Zoom), Aspect, 0.1f, 5000.0f);
 }
 
 void Camera::updateUniformBuffer(){

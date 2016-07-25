@@ -6,7 +6,7 @@ PlanetObject::PlanetObject(){}
 PlanetObject::PlanetObject(Mesh *mesh, Texture2D *texture, std::vector<GLfloat> paramenters)
 	:SObject(mesh, texture)
 {
-	if (paramenters.size() != 10)
+	if (paramenters.size() != 11)
 	{
 		std::cout << "ERROR::PLANETOBJECT::CONSTRUCTOR Paramenter number error" << std::endl;
 		return;
@@ -21,6 +21,7 @@ PlanetObject::PlanetObject(Mesh *mesh, Texture2D *texture, std::vector<GLfloat> 
 	this->R = SolarMath::AU(paramenters[7]);
 	this->D = paramenters[8];
 	this->O = paramenters[9];
+	this->Reflect = paramenters[10];
 	this->UpdatePosition(0.0f);
 	this->UpdateRotation(0.0f);
 }
@@ -54,8 +55,8 @@ void PlanetObject::UpdateRotation(GLfloat time){
 void PlanetObject::Draw(Shader shader){
 	glm::mat4 model;
 	model = glm::translate(model, this->Position * glm::vec3(SOLAR_AXIS_SCALE));
-	model = glm::rotate(model, this->O, glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::rotate(model, this->Rotation, glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(this->O), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(this->Rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(this->R * SOLAR_PLANET_SCALE * SOLAR_AXIS_SCALE));
 	shader.SetMatrix4("model", model);
 
