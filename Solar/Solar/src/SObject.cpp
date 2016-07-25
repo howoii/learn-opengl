@@ -1,7 +1,11 @@
 #include "SObject.h"
 
-SObject::SObject(glm::vec3 pos, Mesh *mesh, Texture2D *texture){
-	this->Position = pos;
+SObject::SObject(){
+	this->Position = glm::vec3(0.0f);
+}
+
+SObject::SObject(Mesh *mesh, Texture2D *texture){
+	this->Position = glm::vec3(0.0f);
 	this->mesh = mesh;
 	this->texture = texture;
 }

@@ -14,9 +14,11 @@ public:
 	Mesh *mesh;
 	Texture2D *texture;
 
-	SObject(glm::vec3 pos, Mesh *mesh, Texture2D *texture);
+	SObject();
+	SObject(Mesh *mesh, Texture2D *texture);
 	void MoveTo(glm::vec3 pos);
-	~SObject();
+	virtual void Draw(Shader shader) = 0;
+	virtual ~SObject();
 
 private:
 

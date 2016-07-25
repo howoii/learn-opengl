@@ -48,6 +48,9 @@
     <ClInclude Include="include\SolarMath.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="include\Sun.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp">
@@ -81,6 +84,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\SolarMath.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sun.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

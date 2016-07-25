@@ -6,7 +6,6 @@
 class Solar
 {
 public:
-	GLboolean Keys[1024];
 	GLuint Width, Height;
 
 	Solar(GLuint width, GLuint height);

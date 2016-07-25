@@ -4,11 +4,14 @@
 #include "Common.h"
 #include "SObject.h"
 
+#include <vector>
+
 class PlanetObject: public SObject
 {
 public:
-	//轨道根数
 	GLfloat T; //公转周期
+
+	//轨道根数
 	GLfloat A; //半长轴
 	GLfloat ε; //轨道离心率
 	GLfloat I; //轨道偏角
@@ -16,10 +19,19 @@ public:
 	GLfloat Ω; //升交点黄经
 	GLfloat M; //平近点角
 
-	PlanetObject(glm::vec3 initPos, Mesh *mesh, Texture2D *texture);
-	void UpdatePosition(GLfloat time);
-	~PlanetObject();
+	//自转参数
+	GLfloat R; //半径
+	GLfloat D; //自转周期
+	GLfloat O; //自转轴倾角(obliguity)
 
+	GLfloat Rotation; //自转角度
+
+	PlanetObject();
+	PlanetObject(Mesh *mesh, Texture2D *texture, std::vector<GLfloat> parameters);
+	void UpdatePosition(GLfloat time);
+	void UpdateRotation(GLfloat time);
+	void Draw(Shader shader);
+	~PlanetObject();
 private:
 };
 

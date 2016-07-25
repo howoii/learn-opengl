@@ -87,6 +87,7 @@
     <ClInclude Include="include\SObject.h" />
     <ClInclude Include="include\Solar.h" />
     <ClInclude Include="include\SolarMath.h" />
+    <ClInclude Include="include\Sun.h" />
     <ClInclude Include="include\Texture2D.h" />
   </ItemGroup>
   <ItemGroup>
@@ -100,6 +101,7 @@
     <ClCompile Include="src\SObject.cpp" />
     <ClCompile Include="src\Solar.cpp" />
     <ClCompile Include="src\SolarMath.cpp" />
+    <ClCompile Include="src\Sun.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -24,6 +24,18 @@ public:
 	* theta		: 返回值实际偏转角的地址
 	*/
 	static void TrueAnomalyAndDistance(GLfloat E, GLfloat A, GLfloat Eccentric, GLfloat *r, GLfloat *theta);
+
+	/*
+	* 将长度单位转化为天文单位
+	* distance	: 以千米为单位的长度
+	*/
+	static GLfloat AU(GLfloat distance);
+
+	/*
+	* 将长度单位转化为千米
+	* distance	: 以天文单位表示的长度
+	*/
+	static GLfloat KM(GLfloat distance);
 	~SolarMath();
 private:
 	SolarMath();

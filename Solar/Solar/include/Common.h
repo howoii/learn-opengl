@@ -20,4 +20,11 @@
 #include <sstream>
 #include <vector>
 
+#define SOLAR_PLANET_NUMBERS 8
+
+#define SOLAR_PLANET_SCALE 100
+#define SOLAR_SUN_SCALE 20
+#define SOLAR_AXIS_SCALE 50
+#define SOLAR_AU 149600000
+
 #endif

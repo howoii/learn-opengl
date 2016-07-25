@@ -7,6 +7,7 @@
 std::map<std::string, Shader> ResourceManager::Shaders;
 std::map<std::string, Texture2D> ResourceManager::Textures;
 std::map<std::string, Mesh> ResourceManager::Meshes;
+std::map<std::string, FloatTable> ResourceManager::Parameters;
 
 Shader ResourceManager::LoadShader(const GLchar *vShaderFile, const GLchar *fShaderFile, const GLchar *gShaderFile, std::string name){
 	Shaders[name] = loadShaderFromFile(vShaderFile, fShaderFile, gShaderFile);
@@ -14,6 +15,10 @@ Shader ResourceManager::LoadShader(const GLchar *vShaderFile, const GLchar *fSha
 }
 Shader ResourceManager::GetShader(std::string name){
 	return Shaders[name];
+}
+
+Shader* ResourceManager::GetShaderPointer(std::string name){
+	return &Shaders[name];
 }
 
 Texture2D ResourceManager::LoadTexture(const GLchar *file, GLboolean alpha, std::string name){
@@ -24,6 +29,10 @@ Texture2D ResourceManager::GetTexture(std::string name){
 	return Textures[name];
 }
 
+Texture2D* ResourceManager::GetTexturePointer(std::string name){
+	return &Textures[name];
+}
+
 Mesh ResourceManager::StoreMesh(Mesh mesh, std::string name){
 	Meshes[name] = mesh;
 	return Meshes[name];
@@ -31,6 +40,19 @@ Mesh ResourceManager::StoreMesh(Mesh mesh, std::string name){
 
 Mesh ResourceManager::GetMesh(std::string name){
 	return Meshes[name];
+}
+
+Mesh* ResourceManager::GetMeshPointer(std::string name){
+	return &Meshes[name];
+}
+
+FloatTable ResourceManager::LoadParameter(const GLchar *file, std::string name){
+	Parameters[name] = loadParameterFromFile(file);
+	return Parameters[name];
+}
+
+FloatTable ResourceManager::GetParameter(std::string name){
+	return Parameters[name];
 }
 
 
@@ -99,4 +121,30 @@ Texture2D ResourceManager::loadTextureFromFile(const GLchar *file, GLboolean alp
 	unsigned char *image = SOIL_load_image(file, &width, &height, 0, texture.Internal_Format != GL_RGBA ? SOIL_LOAD_RGB : SOIL_LOAD_RGBA);
 	texture.Generate(width, height, image);
 	return texture;
+}
+
+FloatTable ResourceManager::loadParameterFromFile(const GLchar *file){
+	FloatTable parameters;
+
+	GLfloat parameter;
+	std::string line;
+	std::ifstream fstream(file);
+
+	if (fstream)
+	{
+		while (std::getline(fstream, line))
+		{
+			if (line[0] == '#')
+				continue;
+			std::stringstream sstream(line);
+			std::vector<GLfloat> row;
+			while (sstream >> parameter)
+			{
+				row.push_back(parameter);
+			}
+			if (row.size() != 0)
+				parameters.push_back(row);
+		}
+		return parameters;
+	}
 }
