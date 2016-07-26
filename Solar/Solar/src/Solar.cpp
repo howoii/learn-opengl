@@ -10,6 +10,7 @@
 #include "PointLight.h"
 #include "DirLight.h"
 #include "Ground.h"
+#include "SkyBox.h"
 
 Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 60.0f, 0.0f));
 PointLight pointLight;
@@ -17,7 +18,9 @@ DirLight dirLight;
 std::vector<PlanetObject> planets;
 Sun sun;
 Ground ground;
-
+SkyBox sky;
+//---------------test code------------------
+//------------------------------------------
 Solar::Solar(GLuint width, GLuint height)
 	:Width(width), Height(height), Vmode(SpaceMode)
 {
@@ -41,11 +44,14 @@ void Solar::Init(){
 	}
 	ResourceManager::LoadTexture("textures/planet_textures/texture_sun.jpg", GL_FALSE, "sun");
 	ResourceManager::LoadTexture("textures/Moss/mossgrown.png", GL_FALSE, "moss");
+	ResourceManager::LoadCubeMap("textures/skybox", GL_FALSE, "skybox1");
 
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/basic.frag", nullptr, "basic").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/basic.vs", "shaders/lightSource.frag", nullptr, "light").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/dirLight.frag", nullptr, "dirLight").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/pointLight.frag", nullptr, "pointLight").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLight.frag", nullptr, "instanceDir").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/skybox.vs", "shaders/skybox.frag", nullptr, "skybox").SetUniformBlock("camera", 0);
 
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
 	ResourceManager::StoreMesh(Mesh::GetCubeMesh(), "cube");
@@ -63,11 +69,14 @@ void Solar::Init(){
 	sun = Sun(mesh, ResourceManager::GetTexturePointer("sun"), planetPara.back());
 
 	ground = Ground(ResourceManager::GetMeshPointer("plane"), ResourceManager::GetTexturePointer("moss"), 20.0f, 20.0f);
+	sky = SkyBox(ResourceManager::GetMeshPointer("cube"), ResourceManager::getCubeMapPointer("skybox1"));
 
 	dirLight = DirLight(glm::vec3(-1.0f), sun.Brightness, 0.02f);
 	pointLight = PointLight(glm::vec3(0.0f), sun.Brightness, 0.02f);
 	
 	camera.BindUniformBuffer(0);
+	//-----------------test code----------------
+	//------------------------------------------
 }
 
 void Solar::ProcessInput(GLfloat dt){
@@ -119,7 +128,7 @@ void Solar::ProcessInput(GLfloat dt){
 
 void Solar::Update(GLfloat dt){
 	//--------------test code------------------
-	std::cout << this->Vmode << std::endl;
+
 	//-----------------------------------------
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
@@ -149,8 +158,13 @@ void Solar::RenderSpace(){
 	}
 
 	SObject *obj = &sun;
-	Shader basicShader = ResourceManager::GetShader("basic").Use();
-	obj->Draw(basicShader);
+	Shader lightShader = ResourceManager::GetShader("light").Use();
+	obj->Draw(lightShader);
+
+	glDepthFunc(GL_LEQUAL);
+	Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
+	sky.Draw(skyboxShader);
+	glDepthFunc(GL_LESS);
 }
 
 void Solar::RenderGround(){
@@ -158,4 +172,9 @@ void Solar::RenderGround(){
 	dirLight.SetUniformData(*planeShader, "dirLight", GL_TRUE);
 	planeShader->SetVector3f("viewPos", camera.Position);
 	ground.Draw(*planeShader);
+
+	glDepthFunc(GL_LEQUAL);
+	Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
+	sky.Draw(skyboxShader);
+	glDepthFunc(GL_LESS);
 }

@@ -6,6 +6,7 @@
 
 std::map<std::string, Shader> ResourceManager::Shaders;
 std::map<std::string, Texture2D> ResourceManager::Textures;
+std::map<std::string, TextureCube> ResourceManager::CubeMaps;
 std::map<std::string, Mesh> ResourceManager::Meshes;
 std::map<std::string, FloatTable> ResourceManager::Parameters;
 
@@ -31,6 +32,19 @@ Texture2D ResourceManager::GetTexture(std::string name){
 
 Texture2D* ResourceManager::GetTexturePointer(std::string name){
 	return &Textures[name];
+}
+
+TextureCube ResourceManager::LoadCubeMap(const GLchar *dir, GLboolean alpha, std::string name){
+	CubeMaps[name] = loadCubeMapFromFile(dir, alpha);
+	return CubeMaps[name];
+}
+
+TextureCube ResourceManager::GetCubeMap(std::string name){
+	return CubeMaps[name];
+}
+
+TextureCube *ResourceManager::getCubeMapPointer(std::string name){
+	return &CubeMaps[name];
 }
 
 Mesh ResourceManager::StoreMesh(Mesh mesh, std::string name){
@@ -120,7 +134,29 @@ Texture2D ResourceManager::loadTextureFromFile(const GLchar *file, GLboolean alp
 	int width, height;
 	unsigned char *image = SOIL_load_image(file, &width, &height, 0, texture.Internal_Format != GL_RGBA ? SOIL_LOAD_RGB : SOIL_LOAD_RGBA);
 	texture.Generate(width, height, image);
+	SOIL_free_image_data(image);
 	return texture;
+}
+
+TextureCube ResourceManager::loadCubeMapFromFile(const GLchar *dir, GLboolean alpha)
+{
+	TextureCube cubemap;
+	if (alpha)
+	{
+		cubemap.Internal_Format = GL_RGBA;
+		cubemap.Image_Format = GL_RGBA;
+	}
+	std::vector<std::string> faces;
+	std::string textureDir(dir);
+	faces.push_back(textureDir + "/right.jpg");
+	faces.push_back(textureDir + "/left.jpg");
+	faces.push_back(textureDir + "/top.jpg");
+	faces.push_back(textureDir + "/bottom.jpg");
+	faces.push_back(textureDir + "/back.jpg");
+	faces.push_back(textureDir + "/front.jpg");
+
+	cubemap.Generate(faces);
+	return cubemap;
 }
 
 FloatTable ResourceManager::loadParameterFromFile(const GLchar *file){
