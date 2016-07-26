@@ -18,10 +18,13 @@ struct Vertex
 class Mesh
 {
 public:
-	GLuint VAO, VBO;
+	GLuint VAO;
 	std::vector<Vertex> vertices;
+
 	Mesh();
 	Mesh(std::vector<Vertex> vertices);
+	void Draw(Shader shader);
+	void DrawInstanced(Shader shader, std::vector<glm::mat4> modelMatrices);
 	static Mesh GetPlaneMesh();
 	static Mesh GetCubeMesh();
 	static Mesh GetSphereMesh(GLfloat radius = 1.0f);

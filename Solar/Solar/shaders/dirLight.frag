@@ -3,9 +3,9 @@ in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
 
-struct PointLight
+struct DirLight
 {
-	vec3 position;
+	vec3 direction;
 	vec3 color;
 	vec3 ambient;
 };
@@ -18,7 +18,7 @@ struct Material
 	float shininess;
 };
 
-uniform PointLight pointLight;
+uniform DirLight dirLight;
 uniform Material material;
 uniform vec3 viewPos;
 
@@ -27,19 +27,19 @@ uniform sampler2D specular;
 
 out vec4 color;
 
-vec3 BlinnPointLight(PointLight light, vec3 normal, vec3 FragPos, vec3 viewDir);
+vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 
 void main(){
 	vec3 norm = normalize(Normal);
 	vec3 viewDir = normalize(vec3(viewPos - FragPos));
-	vec3 result = BlinnPointLight(pointLight, norm, FragPos, viewDir);
-	color = vec4(result * pointLight.color, 1.0);
+	vec3 result = CalcDirLight(dirLight, norm, viewDir);
+	color = vec4(result * dirLight.color, 1.0);
 }
 
-vec3 BlinnPointLight(PointLight light, vec3 normal, vec3 FragPos, vec3 viewDir){
-	vec3 lightDir = normalize(vec3(light.position - FragPos));
+vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir){
+	vec3 lightDir = normalize(-light.direction);
 
-	float diff = max(dot(lightDir, normal), 0.0);
+	float diff = max(dot(normal, lightDir), 0.0);
 
 	vec3 middleDir = normalize(lightDir + viewDir);
 	float spec = pow(max(dot(middleDir, normal), 0.0), material.shininess);

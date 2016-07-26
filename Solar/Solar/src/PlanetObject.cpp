@@ -65,9 +65,11 @@ void PlanetObject::Draw(Shader shader){
 	shader.SetInteger("diffuse", 0);
 	shader.SetInteger("specular", 0);
 
-	glBindVertexArray(this->mesh->VAO);
-	glDrawArrays(GL_TRIANGLES, 0, this->mesh->vertices.size());
-	glBindVertexArray(0);
+	shader.SetVector3f("material.diffuse", glm::vec3(this->Reflect));
+	shader.SetVector3f("material.specular", glm::vec3(0.2f));
+	shader.SetFloat("material.shininess", 32.0f);
+
+	this->mesh->Draw(shader);
 }
 
 PlanetObject::~PlanetObject()

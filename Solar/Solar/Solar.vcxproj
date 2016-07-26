@@ -79,9 +79,13 @@
   <ItemGroup>
     <ClInclude Include="include\Camera.h" />
     <ClInclude Include="include\Common.h" />
+    <ClInclude Include="include\DirLight.h" />
+    <ClInclude Include="include\Ground.h" />
     <ClInclude Include="include\InputManager.h" />
     <ClInclude Include="include\Mesh.h" />
+    <ClInclude Include="include\PlaneObject.h" />
     <ClInclude Include="include\PlanetObject.h" />
+    <ClInclude Include="include\PointLight.h" />
     <ClInclude Include="include\PointLightRenderer.h" />
     <ClInclude Include="include\ResourceManager.h" />
     <ClInclude Include="include\Shader.h" />
@@ -93,10 +97,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\DirLight.cpp" />
+    <ClCompile Include="src\Ground.cpp" />
     <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\PlaneObject.cpp" />
     <ClCompile Include="src\PlanetObject.cpp" />
+    <ClCompile Include="src\PointLight.cpp" />
     <ClCompile Include="src\PointLightRenderer.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Shader.cpp" />

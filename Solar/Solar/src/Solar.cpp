@@ -7,16 +7,19 @@
 #include "PlanetObject.h"
 #include "Sun.h"
 #include "SolarMath.h"
-#include "PointLightRenderer.h"
-
+#include "PointLight.h"
+#include "DirLight.h"
+#include "Ground.h"
 
 Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 60.0f, 0.0f));
-PointLightRenderer *PLRenderer;
+PointLight pointLight;
+DirLight dirLight;
 std::vector<PlanetObject> planets;
 Sun sun;
+Ground ground;
 
 Solar::Solar(GLuint width, GLuint height)
-	:Width(width), Height(height)
+	:Width(width), Height(height), Vmode(SpaceMode)
 {
 
 }
@@ -29,6 +32,7 @@ void Solar::Init(){
 	std::string textureDir = "textures";
 	std::string planetNames[SOLAR_PLANET_NUMBERS] = { "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune" };
 
+	//Load Resource
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
 		std::string textureName = planetNames[i];
@@ -36,9 +40,12 @@ void Solar::Init(){
 		ResourceManager::LoadTexture(texturePath.c_str(), GL_FALSE, textureName.c_str());
 	}
 	ResourceManager::LoadTexture("textures/planet_textures/texture_sun.jpg", GL_FALSE, "sun");
+	ResourceManager::LoadTexture("textures/Moss/mossgrown.png", GL_FALSE, "moss");
 
-	ResourceManager::LoadShader("shaders/basic.vs", "shaders/pointLight.frag", nullptr, "pointLight").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/basic.frag", nullptr, "basic").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/basic.vs", "shaders/dirLight.frag", nullptr, "dirLight").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/basic.vs", "shaders/pointLight.frag", nullptr, "pointLight").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLight.frag", nullptr, "instanceDir").SetUniformBlock("camera", 0);
 
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
 	ResourceManager::StoreMesh(Mesh::GetCubeMesh(), "cube");
@@ -46,6 +53,7 @@ void Solar::Init(){
 
 	FloatTable planetPara = ResourceManager::LoadParameter("configure/PlanetParameter.txt", "planetPara");
 
+	//Construct Objects
 	Mesh *mesh = ResourceManager::GetMeshPointer("sphere");
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
@@ -54,8 +62,10 @@ void Solar::Init(){
 	}
 	sun = Sun(mesh, ResourceManager::GetTexturePointer("sun"), planetPara.back());
 
-	PLRenderer = new PointLightRenderer(ResourceManager::GetShaderPointer("pointLight"),
-		glm::vec3(0.0f), 0.02f, sun.Brightness/2.0f);
+	ground = Ground(ResourceManager::GetMeshPointer("plane"), ResourceManager::GetTexturePointer("moss"), 20.0f, 20.0f);
+
+	dirLight = DirLight(glm::vec3(-1.0f), sun.Brightness, 0.02f);
+	pointLight = PointLight(glm::vec3(0.0f), sun.Brightness, 0.02f);
 	
 	camera.BindUniformBuffer(0);
 }
@@ -77,26 +87,75 @@ void Solar::ProcessInput(GLfloat dt){
 	{
 		camera.ProcessKeyBoard(RIGHT, dt);
 	}
+
+	if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
+		&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
+	{
+		camera.Reset();
+		InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
+	}
+
+	if (this->Vmode == SpaceMode)
+	{
+		if (InputManager::isKeyPressed(GLFW_KEY_TAB) 
+			&& !InputManager::isKeyProcessed(GLFW_KEY_TAB))
+		{
+			this->Vmode = GroundMode;
+			InputManager::ClearKeyBuffer(GLFW_KEY_TAB);
+		}
+	}
+	else
+	{
+		if (InputManager::isKeyPressed(GLFW_KEY_TAB)
+			&& !InputManager::isKeyProcessed(GLFW_KEY_TAB))
+		{
+			this->Vmode = SpaceMode;
+			InputManager::ClearKeyBuffer(GLFW_KEY_TAB);
+		}
+	}
 	camera.ProcessMouseMovement(InputManager::DeltaX, InputManager::DeltaY);
 	camera.ProcessMouseScroll(InputManager::MouseScroll);
 }
 
 void Solar::Update(GLfloat dt){
+	//--------------test code------------------
+	std::cout << this->Vmode << std::endl;
+	//-----------------------------------------
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
-		//planets[i].UpdatePosition(glfwGetTime());
+		planets[i].UpdatePosition(glfwGetTime());
 		planets[i].UpdateRotation(glfwGetTime());
 	}
 }
 
 void Solar::Render(){
-	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
+	if (this->Vmode == SpaceMode)
 	{
-		PLRenderer->Render(&planets[i], planets[i].Reflect, camera.Position);
+		this->RenderSpace();
+	}
+	else{
+		this->RenderGround();
+	}
+}
+
+void Solar::RenderSpace(){
+	Shader *planetShader = ResourceManager::GetShaderPointer("pointLight");
+	pointLight.SetUniformData(*planetShader, "pointLight", GL_TRUE);
+	planetShader->SetVector3f("viewPos", camera.Position);
+	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
+	{
+		SObject *obj = &planets[i];
+		obj->Draw(*planetShader);
 	}
 
 	SObject *obj = &sun;
 	Shader basicShader = ResourceManager::GetShader("basic").Use();
-	basicShader.SetFloat("brightness", sun.Brightness);
 	obj->Draw(basicShader);
+}
+
+void Solar::RenderGround(){
+	Shader *planeShader = ResourceManager::GetShaderPointer("instanceDir");
+	dirLight.SetUniformData(*planeShader, "dirLight", GL_TRUE);
+	planeShader->SetVector3f("viewPos", camera.Position);
+	ground.Draw(*planeShader);
 }

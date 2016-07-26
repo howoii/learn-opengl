@@ -23,7 +23,7 @@ void Sun::Draw(Shader shader){
 	shader.SetInteger("diffuse", 0);
 	shader.SetInteger("specular", 0);
 
-	glBindVertexArray(this->mesh->VAO);
-	glDrawArrays(GL_TRIANGLES, 0, this->mesh->vertices.size());
-	glBindVertexArray(0);
+	shader.SetFloat("brightness", this->Brightness);
+
+	this->mesh->Draw(shader);
 }

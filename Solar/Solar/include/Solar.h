@@ -3,9 +3,16 @@
 
 #include "Common.h"
 
+enum ViewMode
+{
+	SpaceMode,
+	GroundMode
+};
+
 class Solar
 {
 public:
+	ViewMode Vmode;
 	GLuint Width, Height;
 
 	Solar(GLuint width, GLuint height);
@@ -17,6 +24,7 @@ public:
 	void Render();
 
 private:
-
+	void RenderSpace();
+	void RenderGround();
 };
 #endif
