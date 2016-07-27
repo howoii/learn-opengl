@@ -1,5 +1,6 @@
 #include "PlanetObject.h"
 #include "SolarMath.h"
+#include "SolarTime.h"
 
 PlanetObject::PlanetObject(){}
 
@@ -22,13 +23,15 @@ PlanetObject::PlanetObject(Mesh *mesh, Texture2D *texture, std::vector<GLfloat> 
 	this->D = paramenters[8];
 	this->O = paramenters[9];
 	this->Reflect = paramenters[10];
-	this->UpdatePosition(0.0f);
+	this->Position = this->CalcPostion(0.0f);
+	this->InitPos = this->Position;
 	this->UpdateRotation(0.0f);
 }
 
-void  PlanetObject::UpdatePosition(GLfloat time){
-	time -= int(time / this->T) * this->T;
-	GLfloat meanAnomaly = glm::radians(time / this->T * 360.0 + this->M);
+glm::vec3 PlanetObject::CalcPostion(GLfloat time){
+	GLfloat tSeconds = this->T * DAY_HOURS * HOUR_SECONDS;
+	time -= int(time / tSeconds) * tSeconds;
+	GLfloat meanAnomaly = glm::radians(time / tSeconds * 360.0 + this->M);
 	GLfloat r, theta, E;
 	E = SolarMath::EccentricAnomaly(meanAnomaly, this->¦Å);
 	SolarMath::TrueAnomalyAndDistance(E, this->A, this->¦Å, &r, &theta);
@@ -40,16 +43,52 @@ void  PlanetObject::UpdatePosition(GLfloat time){
 	GLfloat cosI = glm::cos(glm::radians(this->I));
 	GLfloat sinBigOmega = glm::sin(glm::radians(this->¦¸));
 	GLfloat cosBigOmega = glm::cos(glm::radians(this->¦¸));
-	posX =  r * (cosOmegaTheta*cosBigOmega - sinOmegaTheta*sinBigOmega*cosI);
+	posX = r * (cosOmegaTheta*cosBigOmega - sinOmegaTheta*sinBigOmega*cosI);
 	posZ = -r * (cosOmegaTheta*sinBigOmega + sinOmegaTheta*cosBigOmega*cosI);
-	posY =  r * sinOmegaTheta*sinI;
+	posY = r * sinOmegaTheta*sinI;
 
-	this->Position = glm::vec3(posX, posY, posZ);
+	return glm::vec3(posX, posY, posZ);
+}
+
+void  PlanetObject::UpdatePosition(GLfloat time){
+	this->Position = this->CalcPostion(time);
 }
 
 void PlanetObject::UpdateRotation(GLfloat time){
-	time -= int(time / this->D) * this->D;
-	this->Rotation = 360.0f * (time / this->D);
+	GLfloat dSeconds = this->D * DAY_HOURS * HOUR_SECONDS;
+	time -= int(time / dSeconds) * dSeconds;
+	this->Rotation = 360.0f * (time / dSeconds);
+}
+
+void PlanetObject::UpdateViewDirecton(PlanetObject *earth, GLfloat longitude, GLfloat latitude){
+	glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+	glm::vec3 viewUp;
+	viewUp.y = glm::sin(glm::radians(latitude));
+	viewUp.x = glm::cos(glm::radians(latitude));
+	viewUp.z = 0;
+
+	glm::mat4 rotateMatrix;
+	rotateMatrix = glm::rotate(rotateMatrix, glm::radians(earth->O), glm::vec3(1.0f, 0.0f, 0.0f));
+	rotateMatrix = glm::rotate(rotateMatrix, glm::radians(earth->Rotation + longitude),
+		glm::vec3(0.0f, 1.0f, 0.0f));
+
+	worldUp = glm::mat3(rotateMatrix) * worldUp;
+	viewUp = glm::mat3(rotateMatrix) * viewUp;
+	glm::vec3 viewRight = glm::cross(worldUp, viewUp);
+	glm::vec3 viewFront = glm::cross(viewUp, viewRight);
+
+	glm::mat4 viewMatrix = glm::lookAt(earth->Position, earth->Position + viewFront, viewUp);
+	glm::vec3 viewPos = glm::vec3(viewMatrix * glm::vec4(this->Position, 1.0f));
+
+	this->ViewDirection = glm::normalize(viewPos);
+}
+
+void PlanetObject::UpdateViewSize(PlanetObject *earth){
+	GLfloat distance = glm::distance(earth->Position, this->Position);
+	if (distance != 0)
+	{
+		this->ViewSize = this->R / distance;
+	}
 }
 
 void PlanetObject::Draw(Shader shader){

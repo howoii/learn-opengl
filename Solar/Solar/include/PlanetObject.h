@@ -24,15 +24,21 @@ public:
 	GLfloat D; //自转周期
 	GLfloat O; //自转轴倾角(obliguity)
 
+	GLfloat ViewSize;
 	//其他参数
 	GLfloat Reflect; //反射率
 
 	GLfloat Rotation; //自转角度
+	glm::vec3 ViewDirection;
+	glm::vec3 InitPos;
 
 	PlanetObject();
 	PlanetObject(Mesh *mesh, Texture2D *texture, std::vector<GLfloat> parameters);
+	glm::vec3 CalcPostion(GLfloat time);
 	void UpdatePosition(GLfloat time);
 	void UpdateRotation(GLfloat time);
+	void UpdateViewDirecton(PlanetObject *earth, GLfloat longitude, GLfloat latitude);
+	void UpdateViewSize(PlanetObject *earth);
 	void Draw(Shader shader);
 	~PlanetObject();
 private:

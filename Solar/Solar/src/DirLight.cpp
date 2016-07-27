@@ -13,6 +13,11 @@ DirLight::DirLight(glm::vec3 direction, GLfloat brightness, GLfloat ambient, glm
 {
 }
 
+void DirLight::Update(glm::vec3 lightPos){
+	this->Brightness = lightPos.y * SOLAR_BRIGHTNESS_LIGHT;
+	this->Direction = -lightPos;
+}
+
 void DirLight::SetUniformData(Shader shader, const GLchar *name, GLboolean useShader /* = GL_FALSE */)
 {
 	if (useShader)

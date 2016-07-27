@@ -1,13 +1,13 @@
 #include "Solar.h"
 #include "ResourceManager.h"
 #include "InputManager.h"
+#include "TimeManager.h"
 #include "Shader.h"
 #include "Mesh.h"
 #include "Camera.h"
 #include "PlanetObject.h"
 #include "Sun.h"
 #include "SolarMath.h"
-#include "SolarTime.h"
 #include "PointLight.h"
 #include "DirLight.h"
 #include "Ground.h"
@@ -20,6 +20,14 @@ std::vector<PlanetObject> planets;
 Sun sun;
 Ground ground;
 SkyBox sky;
+//----------------temp code-----------------
+GLfloat time_scale[5] = { 1.0f, 3600.0f, 3600.0f*24.0f, 3600.0f*24.0f*30.0f, 3600.0f*24.0f*365.0f };
+GLint time_scale_index = 0;
+GLfloat longitude = 0.0f;
+GLfloat latitude = 0.0f;
+GLfloat starDistance = 20.0f;
+//------------------------------------------
+
 //---------------test code------------------
 //------------------------------------------
 Solar::Solar(GLuint width, GLuint height)
@@ -33,10 +41,13 @@ Solar::~Solar(){
 }
 
 void Solar::Init(){
+	//Init Time
+	TimeManager::InitTime();
+
+	//Load Resource
 	std::string textureDir = "textures";
 	std::string planetNames[SOLAR_PLANET_NUMBERS] = { "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune" };
 
-	//Load Resource
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
 		std::string textureName = planetNames[i];
@@ -53,6 +64,7 @@ void Solar::Init(){
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/pointLight.frag", nullptr, "pointLight").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLight.frag", nullptr, "instanceDir").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/skybox.vs", "shaders/skybox.frag", nullptr, "skybox").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/star.vs", "shaders/pointLight.frag", nullptr, "star").SetUniformBlock("camera", 0);
 
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
 	ResourceManager::StoreMesh(Mesh::GetCubeMesh(), "cube");
@@ -72,30 +84,11 @@ void Solar::Init(){
 	ground = Ground(ResourceManager::GetMeshPointer("plane"), ResourceManager::GetTexturePointer("moss"), 20.0f, 20.0f);
 	sky = SkyBox(ResourceManager::GetMeshPointer("cube"), ResourceManager::getCubeMapPointer("skybox1"));
 
-	dirLight = DirLight(glm::vec3(-1.0f), sun.Brightness, 0.02f);
-	pointLight = PointLight(glm::vec3(0.0f), sun.Brightness, 0.02f);
+	dirLight = DirLight(glm::vec3(-1.0f), SOLAR_BRIGHTNESS_LIGHT, 0.02f);
+	pointLight = PointLight(glm::vec3(0.0f), SOLAR_BRIGHTNESS_LIGHT, 0.02f);
 	
 	camera.BindUniformBuffer(0);
 	//-----------------test code----------------
-	SolarTime sTime;
-	std::cout << sTime.Time2StringUTC() << std::endl;
-	SolarTime eTime("2016-11-28 12:12:12");
-	std::cout << eTime.Time2StringUTC() << std::endl;
-	SolarTime oTime(2011, 4, 34, 1, 20, 30);
-	std::cout << oTime.Time2StringUTC() << std::endl;
-
-	sTime.AddSeconds(3600);
-	std::cout << sTime.Time2StringUTC() << std::endl;
-	sTime.AddHours(72);
-	std::cout << sTime.Time2StringUTC() << std::endl;
-	sTime.AddDays(5);
-	std::cout << sTime.Time2StringUTC() << std::endl;
-	sTime.AddMonths(13000);
-	std::cout << sTime.Time2StringUTC() << std::endl;
-	sTime.AddYears(200);
-	std::cout << sTime.Time2StringUTC() << std::endl;
-
-	std::cout << sTime.Difference(eTime) << std::endl;
 	//------------------------------------------
 }
 
@@ -124,6 +117,22 @@ void Solar::ProcessInput(GLfloat dt){
 		InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
 	}
 
+	if (InputManager::isKeyPressed(GLFW_KEY_UP)
+		&& !InputManager::isKeyProcessed(GLFW_KEY_UP))
+	{
+		time_scale_index = (time_scale_index + 1) % 5;
+		TimeManager::SetTimeScale(time_scale[time_scale_index]);
+		InputManager::ClearKeyBuffer(GLFW_KEY_UP);
+	}
+
+	if (InputManager::isKeyPressed(GLFW_KEY_DOWN)
+		&& !InputManager::isKeyProcessed(GLFW_KEY_DOWN))
+	{
+		time_scale_index = (time_scale_index - 1) % 5;
+		TimeManager::SetTimeScale(time_scale[time_scale_index]);
+		InputManager::ClearKeyBuffer(GLFW_KEY_DOWN);
+	}
+
 	if (this->Vmode == SpaceMode)
 	{
 		if (InputManager::isKeyPressed(GLFW_KEY_TAB) 
@@ -147,14 +156,22 @@ void Solar::ProcessInput(GLfloat dt){
 }
 
 void Solar::Update(GLfloat dt){
+	TimeManager::UpdateTime(dt);
 	//--------------test code------------------
-	sky.UpdateBrightness(glm::sin(glfwGetTime()/4.0f) + 1.0f);
 	//-----------------------------------------
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
-		planets[i].UpdatePosition(glfwGetTime());
-		planets[i].UpdateRotation(glfwGetTime());
+		planets[i].UpdatePosition(TimeManager::GetTime());
+		planets[i].UpdateRotation(TimeManager::GetTime());
 	}
+	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
+	{
+		planets[i].UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
+	}
+	sun.UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
+
+	dirLight.Update(sun.ViewDirection);
+	sky.UpdateBrightness(sun.ViewDirection);
 }
 
 void Solar::Render(){
@@ -193,7 +210,45 @@ void Solar::RenderGround(){
 	planeShader->SetVector3f("viewPos", camera.Position);
 	ground.Draw(*planeShader);
 
+	//Render star
 	glDepthFunc(GL_LEQUAL);
+
+	Shader *starShader = ResourceManager::GetShaderPointer("star");
+	pointLight.SetUniformData(*starShader, "pointLight", GL_TRUE);
+	starShader->SetVector3f("viewPos", planets[SOLAR_PLANET_EARTH].Position);
+
+	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
+	{
+		if (i == SOLAR_PLANET_EARTH) continue;
+
+		PlanetObject planet = planets[i];
+		glm::vec3 starPos = planet.ViewDirection * glm::vec3(starDistance);
+		GLfloat size = 1.0;
+		glm::mat4 model1;
+		model1 = glm::translate(model1, starPos);
+		model1 = glm::rotate(model1, glm::radians(planet.O), glm::vec3(1.0f, 0.0f, 0.0f));
+		model1 = glm::scale(model1, glm::vec3(size));
+		starShader->SetMatrix4("model1", model1);
+
+		glm::mat4 model2;
+		model2 = glm::translate(model2, planet.Position);
+		model2 = glm::rotate(model2, glm::radians(planet.O), glm::vec3(1.0f, 0.0f, 0.0f));
+		model2 = glm::scale(model2, glm::vec3(size));
+		starShader->SetMatrix4("model2", model2);
+
+		glActiveTexture(GL_TEXTURE0);
+		planet.texture->Bind();
+		starShader->SetInteger("diffuse", 0);
+		starShader->SetInteger("specular", 0);
+
+		starShader->SetVector3f("material.diffuse", glm::vec3(planet.Reflect));
+		starShader->SetVector3f("material.specular", glm::vec3(0.2f));
+		starShader->SetFloat("material.shininess", 32.0f);
+
+		planet.mesh->Draw(*starShader);
+	}
+	
+
 	Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
 	sky.Draw(skyboxShader);
 	glDepthFunc(GL_LESS);

@@ -18,8 +18,7 @@ public:
 
 	SkyBox();
 	SkyBox(Mesh *mesh, TextureCube *cubeMap);
-	void UpdatePosition(glm::vec3 position);
-	void UpdateBrightness(GLfloat brightness);
+	void UpdateBrightness(glm::vec3 sunPos);
 	void Draw(Shader shader);
 	~SkyBox();
 

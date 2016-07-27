@@ -14,12 +14,8 @@ SkyBox::SkyBox(Mesh *mesh, TextureCube *cubeMap)
 
 }
 
-void SkyBox::UpdatePosition(glm::vec3 position){
-	this->Position = position;
-}
-
-void SkyBox::UpdateBrightness(GLfloat brightness){
-	this->Brightness = brightness;
+void SkyBox::UpdateBrightness(glm::vec3 sunPos){
+	this->Brightness = sunPos.y * SOLAR_BRIGHTNESS_SKY;
 }
 
 void SkyBox::Draw(Shader shader){

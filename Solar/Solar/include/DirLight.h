@@ -14,6 +14,7 @@ public:
 
 	DirLight();
 	DirLight(glm::vec3 direction, GLfloat brightness, GLfloat ambient, glm::vec3 color = glm::vec3(1.0f));
+	void Update(glm::vec3 lightPos);
 	void SetUniformData(Shader shader, const GLchar *name, GLboolean useShader = GL_FALSE);
 	~DirLight();
 

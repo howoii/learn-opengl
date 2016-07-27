@@ -20,8 +20,26 @@ void TimeManager::UpdateTime(GLfloat dt){
 	Time.AddSeconds(deltaTime);
 }
 
-void SetTimeScale(GLint scale);
-void AddHours(GLint hour = 1);
-void AddDays(GLint day = 1);
-void AddMonths(GLint month = 1);
-void AddYears(GLint year = 1);
+void TimeManager::SetTimeScale(GLint scale)
+{
+	Scale = scale;
+}
+
+void TimeManager::AddHours(GLint hour)
+{
+	Time.AddHours(hour);
+}
+
+void TimeManager::AddDays(GLint day)
+{
+	Time.AddDays(day);
+}
+
+void TimeManager::AddMonths(GLint month)
+{
+	Time.AddMonths(month);
+}
+
+void TimeManager::AddYears(GLint year){
+	Time.AddYears(year);
+}
