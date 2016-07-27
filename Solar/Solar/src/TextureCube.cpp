@@ -13,6 +13,19 @@ TextureCube::~TextureCube()
 }
 
 void TextureCube::Generate(std::vector<std::string> faces){
+	/*this->ID = SOIL_load_OGL_cubemap(
+		faces[0].c_str(),
+		faces[1].c_str(),
+		faces[2].c_str(),
+		faces[3].c_str(),
+		faces[4].c_str(),
+		faces[5].c_str(),
+		SOIL_LOAD_RGB,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_MIPMAPS
+		);*/
+	
+	
 	glBindTexture(GL_TEXTURE_CUBE_MAP, this->ID);
 
 	int width, height;
@@ -33,6 +46,7 @@ void TextureCube::Generate(std::vector<std::string> faces){
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, this->Filter_Min);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, this->Filter_Mag);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	
 }
 
 void TextureCube::Bind() const

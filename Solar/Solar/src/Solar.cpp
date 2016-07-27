@@ -7,6 +7,7 @@
 #include "PlanetObject.h"
 #include "Sun.h"
 #include "SolarMath.h"
+#include "SolarTime.h"
 #include "PointLight.h"
 #include "DirLight.h"
 #include "Ground.h"
@@ -76,6 +77,25 @@ void Solar::Init(){
 	
 	camera.BindUniformBuffer(0);
 	//-----------------test code----------------
+	SolarTime sTime;
+	std::cout << sTime.Time2StringUTC() << std::endl;
+	SolarTime eTime("2016-11-28 12:12:12");
+	std::cout << eTime.Time2StringUTC() << std::endl;
+	SolarTime oTime(2011, 4, 34, 1, 20, 30);
+	std::cout << oTime.Time2StringUTC() << std::endl;
+
+	sTime.AddSeconds(3600);
+	std::cout << sTime.Time2StringUTC() << std::endl;
+	sTime.AddHours(72);
+	std::cout << sTime.Time2StringUTC() << std::endl;
+	sTime.AddDays(5);
+	std::cout << sTime.Time2StringUTC() << std::endl;
+	sTime.AddMonths(13000);
+	std::cout << sTime.Time2StringUTC() << std::endl;
+	sTime.AddYears(200);
+	std::cout << sTime.Time2StringUTC() << std::endl;
+
+	std::cout << sTime.Difference(eTime) << std::endl;
 	//------------------------------------------
 }
 
@@ -128,7 +148,7 @@ void Solar::ProcessInput(GLfloat dt){
 
 void Solar::Update(GLfloat dt){
 	//--------------test code------------------
-
+	sky.UpdateBrightness(glm::sin(glfwGetTime()/4.0f) + 1.0f);
 	//-----------------------------------------
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
