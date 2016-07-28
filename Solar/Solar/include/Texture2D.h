@@ -17,6 +17,8 @@ public:
 	GLuint Filter_Min;
 	GLuint Filter_Mag;
 
+	GLuint DataType;
+
 	Texture2D();
 	~Texture2D();
 

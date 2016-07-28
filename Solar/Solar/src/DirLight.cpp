@@ -1,4 +1,5 @@
 #include "DirLight.h"
+#include "SolarMath.h"
 
 DirLight::DirLight()
 {
@@ -14,7 +15,7 @@ DirLight::DirLight(glm::vec3 direction, GLfloat brightness, GLfloat ambient, glm
 }
 
 void DirLight::Update(glm::vec3 lightPos){
-	this->Brightness = lightPos.y * SOLAR_BRIGHTNESS_LIGHT;
+	this->Brightness = SolarMath::CalcBrightness(lightPos) * SOLAR_BRIGHTNESS_LIGHT;
 	this->Direction = -lightPos;
 }
 

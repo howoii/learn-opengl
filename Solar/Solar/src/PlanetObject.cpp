@@ -87,7 +87,8 @@ void PlanetObject::UpdateViewSize(PlanetObject *earth){
 	GLfloat distance = glm::distance(earth->Position, this->Position);
 	if (distance != 0)
 	{
-		this->ViewSize = this->R / distance;
+		this->Distance = distance;
+		this->ViewSize = (this->R / distance) * SOLAR_PLANET_VIEW_SCALE;
 	}
 }
 
@@ -110,6 +111,39 @@ void PlanetObject::Draw(Shader shader){
 
 	this->mesh->Draw(shader);
 }
+
+void PlanetObject::DrawStar(Shader shader){
+	if (this->ViewDirection.y < -0.2) return;
+	GLfloat starDistance = this->Distance + 50.0f;
+	glm::vec3 starPos = this->ViewDirection * glm::vec3(starDistance);
+	GLfloat size = starDistance * this->ViewSize;
+
+	glm::mat4 model1;
+	model1 = glm::translate(model1, starPos);
+	model1 = glm::rotate(model1, glm::radians(this->O), glm::vec3(1.0f, 0.0f, 0.0f));
+	model1 = glm::scale(model1, glm::vec3(size));
+	shader.SetMatrix4("model1", model1);
+
+	glm::mat4 model2;
+	model2 = glm::translate(model2, this->Position);
+	model2 = glm::rotate(model2, glm::radians(this->O), glm::vec3(1.0f, 0.0f, 0.0f));
+	model2 = glm::scale(model2, glm::vec3(size));
+	shader.SetMatrix4("model2", model2);
+
+	glActiveTexture(GL_TEXTURE0);
+	this->texture->Bind();
+	shader.SetInteger("diffuse", 0);
+	shader.SetInteger("specular", 0);
+
+	shader.SetVector3f("material.diffuse", glm::vec3(this->Reflect));
+	shader.SetVector3f("material.specular", glm::vec3(0.2f));
+	shader.SetFloat("material.shininess", 32.0f);
+
+	glDepthMask(GL_FALSE);
+	this->mesh->Draw(shader);
+	glDepthMask(GL_TRUE);
+}
+
 
 PlanetObject::~PlanetObject()
 {

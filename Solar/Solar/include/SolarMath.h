@@ -36,6 +36,8 @@ public:
 	* distance	: 以天文单位表示的长度
 	*/
 	static GLfloat KM(GLfloat distance);
+
+	static GLfloat CalcBrightness(glm::vec3 lightDirection);
 	~SolarMath();
 private:
 	SolarMath();

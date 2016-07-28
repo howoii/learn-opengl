@@ -75,6 +75,9 @@
     <ClInclude Include="include\SolarTime.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="include\ShadowRender.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp">
@@ -135,6 +138,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\TimeManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ShadowRender.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

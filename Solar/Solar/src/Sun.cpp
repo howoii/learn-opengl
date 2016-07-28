@@ -35,6 +35,12 @@ void Sun::UpdateViewDirecton(PlanetObject *earth, GLfloat longitude, GLfloat lat
 	this->ViewDirection = glm::normalize(viewPos);
 }
 
+void Sun::UpdateViewSize(PlanetObject *earth){
+	GLfloat distance = glm::distance(earth->Position, this->Position);
+	this->Distance = distance;
+	this->ViewSize = (this->Radius / distance) * 5.0f;
+}
+
 void Sun::Draw(Shader shader){
 	glm::mat4 model;
 	model = glm::translate(model, this->Position * glm::vec3(SOLAR_AXIS_SCALE));
@@ -49,4 +55,30 @@ void Sun::Draw(Shader shader){
 	shader.SetFloat("brightness", this->Brightness);
 
 	this->mesh->Draw(shader);
+}
+
+void Sun::DrawStar(Shader shader){
+	if (this->ViewDirection.y < -0.2)
+		return;
+	GLfloat sunDistance = this->Distance + 100.0f;
+	PRINT(sunDistance);
+	glm::vec3 sunPos = this->ViewDirection * glm::vec3(sunDistance);
+	GLfloat size = this->ViewSize * sunDistance;
+	GLfloat brightness = SolarMath::CalcBrightness(this->ViewDirection) * SOLAR_BRIGHTNESS_SUN * 10;
+
+	glm::mat4 model;
+	model = glm::translate(model, sunPos);
+	model = glm::scale(model, glm::vec3(size));
+	shader.SetMatrix4("model", model);
+
+	glActiveTexture(GL_TEXTURE0);
+	this->texture->Bind();
+	shader.SetInteger("diffuse", 0);
+	shader.SetInteger("specular", 0);
+
+	shader.SetFloat("brightness", brightness);
+
+	glDepthMask(GL_FALSE);
+	this->mesh->Draw(shader);
+	glDepthMask(GL_TRUE);
 }

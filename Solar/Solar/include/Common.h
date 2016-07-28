@@ -20,11 +20,16 @@
 #include <sstream>
 #include <vector>
 
+#define PRINT(var) std::cout << var << std::endl
+#define MAX(a, b) (a) >= (b) ? (a) : (b)
+#define MIN(a, b) (a) < (b) ? (a) : (b)
+
 #define SOLAR_PLANET_NUMBERS 8
 
 #define SOLAR_PLANET_SCALE 200
 #define SOLAR_SUN_SCALE 40
 #define SOLAR_AXIS_SCALE 50
+#define SOLAR_PLANET_VIEW_SCALE 50
 #define SOLAR_AU 149600000
 
 #define SOLAR_PLANET_MERCURY 0

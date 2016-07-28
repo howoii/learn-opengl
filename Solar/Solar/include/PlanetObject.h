@@ -24,12 +24,16 @@ public:
 	GLfloat D; //自转周期
 	GLfloat O; //自转轴倾角(obliguity)
 
-	GLfloat ViewSize;
+	GLfloat Rotation; //自转角度
+
 	//其他参数
 	GLfloat Reflect; //反射率
 
-	GLfloat Rotation; //自转角度
+	//观测参数
+	GLfloat ViewSize;
 	glm::vec3 ViewDirection;
+	GLfloat Distance;
+
 	glm::vec3 InitPos;
 
 	PlanetObject();
@@ -40,6 +44,7 @@ public:
 	void UpdateViewDirecton(PlanetObject *earth, GLfloat longitude, GLfloat latitude);
 	void UpdateViewSize(PlanetObject *earth);
 	void Draw(Shader shader);
+	void DrawStar(Shader shader);
 	~PlanetObject();
 private:
 };

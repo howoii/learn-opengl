@@ -36,3 +36,7 @@ GLfloat SolarMath::AU(GLfloat distance){
 GLfloat SolarMath::KM(GLfloat distance){
 	return distance * SOLAR_AU;
 }
+
+GLfloat SolarMath::CalcBrightness(glm::vec3 lightDirection){
+	return MAX(lightDirection.y, 0.05);
+}

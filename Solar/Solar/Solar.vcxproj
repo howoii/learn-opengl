@@ -88,6 +88,7 @@
     <ClInclude Include="include\PointLight.h" />
     <ClInclude Include="include\ResourceManager.h" />
     <ClInclude Include="include\Shader.h" />
+    <ClInclude Include="include\ShadowRender.h" />
     <ClInclude Include="include\SkyBox.h" />
     <ClInclude Include="include\SObject.h" />
     <ClInclude Include="include\Solar.h" />
@@ -110,6 +111,7 @@
     <ClCompile Include="src\PointLight.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\ShadowRender.cpp" />
     <ClCompile Include="src\SkyBox.cpp" />
     <ClCompile Include="src\SObject.cpp" />
     <ClCompile Include="src\Solar.cpp" />

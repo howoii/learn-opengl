@@ -12,6 +12,7 @@
 #include "DirLight.h"
 #include "Ground.h"
 #include "SkyBox.h"
+#include "ShadowRender.h"
 
 Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 60.0f, 0.0f));
 PointLight pointLight;
@@ -20,16 +21,22 @@ std::vector<PlanetObject> planets;
 Sun sun;
 Ground ground;
 SkyBox sky;
+ShadowRender shadowRenderer;
 //----------------temp code-----------------
 GLfloat time_scale[5] = { 1.0f, 3600.0f, 3600.0f*24.0f, 3600.0f*24.0f*30.0f, 3600.0f*24.0f*365.0f };
 GLint time_scale_index = 0;
-GLfloat longitude = 0.0f;
-GLfloat latitude = 0.0f;
-GLfloat starDistance = 20.0f;
+GLfloat longitude = 120.0f;
+GLfloat latitude = 30.0f;
+GLfloat starDistance = 50.0f;
 //------------------------------------------
 
 //---------------test code------------------
+GLuint hdrFBO;
+GLuint rboDepth;
+Texture2D colorBuffer;
+PlaneObject screen;
 //------------------------------------------
+
 Solar::Solar(GLuint width, GLuint height)
 	:Width(width), Height(height), Vmode(SpaceMode)
 {
@@ -65,6 +72,9 @@ void Solar::Init(){
 	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLight.frag", nullptr, "instanceDir").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/skybox.vs", "shaders/skybox.frag", nullptr, "skybox").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/star.vs", "shaders/pointLight.frag", nullptr, "star").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/sun.vs", "shaders/lightSource.frag", nullptr, "sun").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/quad.vs", "shaders/hdr.frag", nullptr, "hdr");
+	ResourceManager::LoadShader("shaders/depth.vs", "shaders/depth.frag", nullptr, "depth");
 
 	ResourceManager::StoreMesh(Mesh::GetSphereMesh(), "sphere");
 	ResourceManager::StoreMesh(Mesh::GetCubeMesh(), "cube");
@@ -84,11 +94,32 @@ void Solar::Init(){
 	ground = Ground(ResourceManager::GetMeshPointer("plane"), ResourceManager::GetTexturePointer("moss"), 20.0f, 20.0f);
 	sky = SkyBox(ResourceManager::GetMeshPointer("cube"), ResourceManager::getCubeMapPointer("skybox1"));
 
-	dirLight = DirLight(glm::vec3(-1.0f), SOLAR_BRIGHTNESS_LIGHT, 0.02f);
+	dirLight = DirLight(glm::vec3(-1.0f), SOLAR_BRIGHTNESS_LIGHT, 0.1f);
 	pointLight = PointLight(glm::vec3(0.0f), SOLAR_BRIGHTNESS_LIGHT, 0.02f);
 	
+	shadowRenderer = ShadowRender(dirLight.Direction, 50.0f, 1.0f, 20.0f, ResourceManager::GetShaderPointer("depth"));
+
 	camera.BindUniformBuffer(0);
 	//-----------------test code----------------
+	glGenFramebuffers(1, &hdrFBO);
+
+	colorBuffer.Internal_Format = GL_RGB16F;
+	colorBuffer.DataType = GL_FLOAT;
+	colorBuffer.Generate(this->Width, this->Height, NULL);
+
+	glGenRenderbuffers(1, &rboDepth);
+	glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, this->Width, this->Height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	// - Attach buffers
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer.ID, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Framebuffer not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	screen = PlaneObject(ResourceManager::GetMeshPointer("plane"), &shadowRenderer.DepthMap);
 	//------------------------------------------
 }
 
@@ -108,13 +139,6 @@ void Solar::ProcessInput(GLfloat dt){
 	if (InputManager::isKeyPressed(GLFW_KEY_D))
 	{
 		camera.ProcessKeyBoard(RIGHT, dt);
-	}
-
-	if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
-		&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
-	{
-		camera.Reset();
-		InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
 	}
 
 	if (InputManager::isKeyPressed(GLFW_KEY_UP)
@@ -141,6 +165,13 @@ void Solar::ProcessInput(GLfloat dt){
 			this->Vmode = GroundMode;
 			InputManager::ClearKeyBuffer(GLFW_KEY_TAB);
 		}
+
+		if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
+			&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
+		{
+			camera.Reset();
+			InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
+		}
 	}
 	else
 	{
@@ -149,6 +180,20 @@ void Solar::ProcessInput(GLfloat dt){
 		{
 			this->Vmode = SpaceMode;
 			InputManager::ClearKeyBuffer(GLFW_KEY_TAB);
+		}
+
+		if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
+			&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
+		{
+			if (TimeManager::IsStopped())
+			{
+				TimeManager::Continue();
+			}
+			else
+			{
+				TimeManager::Stop();
+			}
+			InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
 		}
 	}
 	camera.ProcessMouseMovement(InputManager::DeltaX, InputManager::DeltaY);
@@ -167,14 +212,25 @@ void Solar::Update(GLfloat dt){
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
 		planets[i].UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
+		planets[i].UpdateViewSize(&planets[SOLAR_PLANET_EARTH]);
 	}
 	sun.UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
+	sun.UpdateViewSize(&planets[SOLAR_PLANET_EARTH]);
 
 	dirLight.Update(sun.ViewDirection);
 	sky.UpdateBrightness(sun.ViewDirection);
+	shadowRenderer.UpdateDirection(dirLight.Direction);
 }
 
 void Solar::Render(){
+	//--------------test code-----------------
+	shadowRenderer.BeginRender();
+	ground.Draw(*shadowRenderer.DepthShader);
+	shadowRenderer.EndRender();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//----------------------------------------
 	if (this->Vmode == SpaceMode)
 	{
 		this->RenderSpace();
@@ -182,6 +238,13 @@ void Solar::Render(){
 	else{
 		this->RenderGround();
 	}
+	//-------------test code------------------
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	Shader hdrShader = ResourceManager::GetShader("hdr").Use();
+	hdrShader.SetFloat("exposure", 0.5f);
+	screen.Draw(hdrShader);
+	//----------------------------------------
 }
 
 void Solar::RenderSpace(){
@@ -205,14 +268,13 @@ void Solar::RenderSpace(){
 }
 
 void Solar::RenderGround(){
-	Shader *planeShader = ResourceManager::GetShaderPointer("instanceDir");
-	dirLight.SetUniformData(*planeShader, "dirLight", GL_TRUE);
-	planeShader->SetVector3f("viewPos", camera.Position);
-	ground.Draw(*planeShader);
+	//Render skybox
+	glDepthFunc(GL_LEQUAL);
+	Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
+	sky.Draw(skyboxShader);
+	glDepthFunc(GL_LESS);
 
 	//Render star
-	glDepthFunc(GL_LEQUAL);
-
 	Shader *starShader = ResourceManager::GetShaderPointer("star");
 	pointLight.SetUniformData(*starShader, "pointLight", GL_TRUE);
 	starShader->SetVector3f("viewPos", planets[SOLAR_PLANET_EARTH].Position);
@@ -220,36 +282,16 @@ void Solar::RenderGround(){
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
 		if (i == SOLAR_PLANET_EARTH) continue;
-
-		PlanetObject planet = planets[i];
-		glm::vec3 starPos = planet.ViewDirection * glm::vec3(starDistance);
-		GLfloat size = 1.0;
-		glm::mat4 model1;
-		model1 = glm::translate(model1, starPos);
-		model1 = glm::rotate(model1, glm::radians(planet.O), glm::vec3(1.0f, 0.0f, 0.0f));
-		model1 = glm::scale(model1, glm::vec3(size));
-		starShader->SetMatrix4("model1", model1);
-
-		glm::mat4 model2;
-		model2 = glm::translate(model2, planet.Position);
-		model2 = glm::rotate(model2, glm::radians(planet.O), glm::vec3(1.0f, 0.0f, 0.0f));
-		model2 = glm::scale(model2, glm::vec3(size));
-		starShader->SetMatrix4("model2", model2);
-
-		glActiveTexture(GL_TEXTURE0);
-		planet.texture->Bind();
-		starShader->SetInteger("diffuse", 0);
-		starShader->SetInteger("specular", 0);
-
-		starShader->SetVector3f("material.diffuse", glm::vec3(planet.Reflect));
-		starShader->SetVector3f("material.specular", glm::vec3(0.2f));
-		starShader->SetFloat("material.shininess", 32.0f);
-
-		planet.mesh->Draw(*starShader);
+		planets[i].DrawStar(*starShader);
 	}
-	
 
-	Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
-	sky.Draw(skyboxShader);
-	glDepthFunc(GL_LESS);
+	//Render sun
+	Shader lightShader = ResourceManager::GetShader("sun").Use();
+	sun.DrawStar(lightShader);
+
+	//Render ground
+	Shader *planeShader = ResourceManager::GetShaderPointer("instanceDir");
+	dirLight.SetUniformData(*planeShader, "dirLight", GL_TRUE);
+	planeShader->SetVector3f("viewPos", camera.Position);
+	ground.Draw(*planeShader);
 }

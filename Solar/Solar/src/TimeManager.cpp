@@ -3,12 +3,14 @@
 SolarTime TimeManager::Time;
 SolarTime TimeManager::Epoch;
 GLfloat TimeManager::Scale;
+GLboolean TimeManager::Stopped;
 
 void TimeManager::InitTime()
 {
 	Time = SolarTime();
 	Epoch = SolarTime(TIME_EPOCH);
 	Scale = 1.0f;
+	Stopped = false;
 }
 
 double TimeManager::GetTime(){
@@ -16,8 +18,23 @@ double TimeManager::GetTime(){
 }
 
 void TimeManager::UpdateTime(GLfloat dt){
-	GLint deltaTime = GLint(dt * Scale);
-	Time.AddSeconds(deltaTime);
+	if (!Stopped)
+	{
+		GLint deltaTime = GLint(dt * Scale);
+		Time.AddSeconds(deltaTime);
+	}
+}
+
+GLboolean TimeManager::IsStopped(){
+	return Stopped;
+}
+
+void TimeManager::Stop(){
+	Stopped = true;
+}
+
+void TimeManager::Continue(){
+	Stopped = false;
 }
 
 void TimeManager::SetTimeScale(GLint scale)

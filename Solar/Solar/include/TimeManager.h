@@ -12,6 +12,9 @@ public:
 	static void InitTime();
 	static double GetTime();
 	static void UpdateTime(GLfloat dt);
+	static void Stop();
+	static void Continue();
+	static GLboolean IsStopped();
 	static void SetTimeScale(GLint scale);
 	static void AddHours(GLint hour = 1);
 	static void AddDays(GLint day = 1);
@@ -23,6 +26,8 @@ private:
 	static SolarTime Time;
 	static SolarTime Epoch;
 	static GLfloat Scale;
+
+	static GLboolean Stopped;
 	TimeManager(){}
 };
 

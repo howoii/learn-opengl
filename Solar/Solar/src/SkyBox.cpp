@@ -1,4 +1,5 @@
 #include "SkyBox.h"
+#include "SolarMath.h"
 
 SkyBox::SkyBox()
 {
@@ -15,7 +16,7 @@ SkyBox::SkyBox(Mesh *mesh, TextureCube *cubeMap)
 }
 
 void SkyBox::UpdateBrightness(glm::vec3 sunPos){
-	this->Brightness = sunPos.y * SOLAR_BRIGHTNESS_SKY;
+	this->Brightness = SolarMath::CalcBrightness(sunPos) * SOLAR_BRIGHTNESS_SKY;
 }
 
 void SkyBox::Draw(Shader shader){

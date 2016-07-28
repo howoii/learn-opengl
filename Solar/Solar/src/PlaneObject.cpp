@@ -38,7 +38,7 @@ void PlaneObject::prepareShader(Shader shader)
 	shader.SetInteger("diffuse", 0);
 	shader.SetInteger("specular", 0);
 
-	shader.SetVector3f("material.diffuse", glm::vec3(0.6));
+	shader.SetVector3f("material.diffuse", glm::vec3(0.8));
 	shader.SetVector3f("material.specular", glm::vec3(0.1f));
 	shader.SetFloat("material.shininess", 1.0f);
 }
