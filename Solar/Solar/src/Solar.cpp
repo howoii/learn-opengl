@@ -73,6 +73,7 @@ void Solar::Init(){
 	ResourceManager::LoadShader("shaders/skybox.vs", "shaders/skybox.frag", nullptr, "skybox").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/star.vs", "shaders/pointLight.frag", nullptr, "star").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/sun.vs", "shaders/lightSource.frag", nullptr, "sun").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLightShadow.frag", nullptr, "shadow").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/quad.vs", "shaders/hdr.frag", nullptr, "hdr");
 	ResourceManager::LoadShader("shaders/depth.vs", "shaders/depth.frag", nullptr, "depth");
 
@@ -290,8 +291,12 @@ void Solar::RenderGround(){
 	sun.DrawStar(lightShader);
 
 	//Render ground
-	Shader *planeShader = ResourceManager::GetShaderPointer("instanceDir");
-	dirLight.SetUniformData(*planeShader, "dirLight", GL_TRUE);
-	planeShader->SetVector3f("viewPos", camera.Position);
-	ground.Draw(*planeShader);
+	Shader *shadowShader = ResourceManager::GetShaderPointer("shadow");
+	dirLight.SetUniformData(*shadowShader, "dirLight", GL_TRUE);
+	shadowShader->SetVector3f("viewPos", camera.Position);
+	shadowShader->SetMatrix4("lightSpaceMatrix", shadowRenderer.LightSpaceMatrix);
+	glActiveTexture(GL_TEXTURE1);
+	shadowRenderer.DepthMap.Bind();
+	shadowShader->SetInteger("shadowMap", 1);
+	ground.Draw(*shadowShader);
 }

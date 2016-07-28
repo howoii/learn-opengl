@@ -13,8 +13,10 @@ layout (std140) uniform Camera
 out vec2 TexCoords;
 out vec3 Normal;
 out vec3 FragPos;
+out vec4 FragPosLightSpace;
 
 uniform mat4 model;
+uniform mat4 lightSpaceMatrix;
 
 void main()
 {
@@ -22,4 +24,5 @@ void main()
     TexCoords = texCoords;
 	Normal = mat3(transpose(inverse(instanceMatrix * model))) * normal;
 	FragPos = vec3(model * vec4(position, 1.0));
+	FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
 }
