@@ -17,6 +17,14 @@ double TimeManager::GetTime(){
 	return Time.Difference(Epoch);
 }
 
+std::string TimeManager::TimeStringUtc(){
+	return Time.Time2StringUTC();
+}
+
+std::string TimeManager::TimeStringLocal(GLfloat longitude){
+	return Time.Time2StringLocal(longitude);
+}
+
 void TimeManager::UpdateTime(GLfloat dt){
 	if (!Stopped)
 	{

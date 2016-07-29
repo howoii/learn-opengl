@@ -32,7 +32,7 @@ void ShadowRender::setupFrameBuffer()
 void ShadowRender::setupLightMatrix(){
 	glm::vec3 eye = glm::vec3(0.0f, (FarPlane - NearPlane)/2.0f, 0.0f);
 	glm::mat4 lightProjection = glm::ortho(-Edge, Edge, -Edge, Edge, NearPlane, FarPlane);
-	glm::mat4 lightView = glm::lookAt(eye, eye + this->LightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightView = glm::lookAt(eye, eye + this->LightDirection, glm::vec3(0.01f, 1.0f, 0.01f));
 	this->LightSpaceMatrix = lightProjection * lightView;
 }
 
@@ -47,6 +47,8 @@ void ShadowRender::BeginRender(){
 void ShadowRender::EndRender()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void ShadowRender::UpdateDirection(glm::vec3 direction){

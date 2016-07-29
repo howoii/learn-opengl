@@ -60,8 +60,7 @@ void Sun::Draw(Shader shader){
 void Sun::DrawStar(Shader shader){
 	if (this->ViewDirection.y < -0.2)
 		return;
-	GLfloat sunDistance = this->Distance + 100.0f;
-	PRINT(sunDistance);
+	GLfloat sunDistance = this->Distance + 50.0f;
 	glm::vec3 sunPos = this->ViewDirection * glm::vec3(sunDistance);
 	GLfloat size = this->ViewSize * sunDistance;
 	GLfloat brightness = SolarMath::CalcBrightness(this->ViewDirection) * SOLAR_BRIGHTNESS_SUN * 10;

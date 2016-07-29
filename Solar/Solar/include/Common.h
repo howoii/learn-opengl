@@ -45,4 +45,7 @@
 #define SOLAR_BRIGHTNESS_SKY 4
 #define SOLAR_BRIGHTNESS_LIGHT 4
 
+const GLuint SCREEN_WIDTH = 1200;
+const GLuint SCREEN_HEIGHT = 900;
+
 #endif

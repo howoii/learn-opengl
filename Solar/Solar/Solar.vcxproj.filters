@@ -78,6 +78,12 @@
     <ClInclude Include="include\ShadowRender.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="include\Satellite.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TextRenderer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp">
@@ -141,6 +147,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\ShadowRender.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Satellite.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TextRenderer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

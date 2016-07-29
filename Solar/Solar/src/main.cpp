@@ -12,9 +12,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void cursor_enter_callback(GLFWwindow* window, int entered);
 
-const GLuint SCREEN_WIDTH = 1200;
-const GLuint SCREEN_HEIGHT = 900;
-
 Solar solar(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 int main(int argc, char *argv[]){
@@ -75,7 +72,6 @@ int main(int argc, char *argv[]){
 		solar.Render();
 		//-------------------------test code-------------------------------
 		
-
 		//------------------------------------------------------------------
 		InputManager::ClearMouseMovement();
 		InputManager::ClearMouseScroll();

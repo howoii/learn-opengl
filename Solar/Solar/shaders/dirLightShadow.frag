@@ -30,7 +30,7 @@ uniform sampler2D shadowMap;
 out vec4 color;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
-float ShadowCalculation(vec4 fragPosLightSpace);
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 
 void main(){
 	vec3 norm = normalize(Normal);
@@ -38,7 +38,7 @@ void main(){
 	vec3 result = CalcDirLight(dirLight, norm, viewDir);
 	vec3 ambient = dirLight.ambient * vec3(texture(diffuse, TexCoords));
 
-	float shadow = ShadowCalculation(FragPosLightSpace);
+	float shadow = ShadowCalculation(FragPosLightSpace, Normal, normalize(-dirLight.direction));
 	result = result * (1.0 - shadow) + ambient;
 	color = vec4(result * dirLight.color, 1.0);
 }
@@ -57,13 +57,14 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir){
 	return (diffuse + specular);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
     float closestDepth = texture(shadowMap, projCoords.xy).r; 
     float currentDepth = projCoords.z;
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
 
     return shadow;
 }

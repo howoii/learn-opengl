@@ -87,6 +87,7 @@
     <ClInclude Include="include\PlanetObject.h" />
     <ClInclude Include="include\PointLight.h" />
     <ClInclude Include="include\ResourceManager.h" />
+    <ClInclude Include="include\Satellite.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\ShadowRender.h" />
     <ClInclude Include="include\SkyBox.h" />
@@ -95,6 +96,7 @@
     <ClInclude Include="include\SolarMath.h" />
     <ClInclude Include="include\SolarTime.h" />
     <ClInclude Include="include\Sun.h" />
+    <ClInclude Include="include\TextRenderer.h" />
     <ClInclude Include="include\Texture2D.h" />
     <ClInclude Include="include\TextureCube.h" />
     <ClInclude Include="include\TimeManager.h" />
@@ -110,6 +112,7 @@
     <ClCompile Include="src\PlanetObject.cpp" />
     <ClCompile Include="src\PointLight.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\Satellite.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\ShadowRender.cpp" />
     <ClCompile Include="src\SkyBox.cpp" />
@@ -118,6 +121,7 @@
     <ClCompile Include="src\SolarMath.cpp" />
     <ClCompile Include="src\SolarTime.cpp" />
     <ClCompile Include="src\Sun.cpp" />
+    <ClCompile Include="src\TextRenderer.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
     <ClCompile Include="src\TextureCube.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />

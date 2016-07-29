@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "PlanetObject.h"
+#include "Satellite.h"
 #include "Sun.h"
 #include "SolarMath.h"
 #include "PointLight.h"
@@ -13,21 +14,27 @@
 #include "Ground.h"
 #include "SkyBox.h"
 #include "ShadowRender.h"
+#include "TextRenderer.h"
 
 Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 60.0f, 0.0f));
 PointLight pointLight;
 DirLight dirLight;
 std::vector<PlanetObject> planets;
+PlanetObject comet;
+Satellite moon;
 Sun sun;
-Ground ground;
 SkyBox sky;
+Ground ground;
 ShadowRender shadowRenderer;
+TextRenderer text;
 //----------------temp code-----------------
 GLfloat time_scale[5] = { 1.0f, 3600.0f, 3600.0f*24.0f, 3600.0f*24.0f*30.0f, 3600.0f*24.0f*365.0f };
 GLint time_scale_index = 0;
 GLfloat longitude = 120.0f;
-GLfloat latitude = 30.0f;
+GLfloat latitude = 0.0f;
 GLfloat starDistance = 50.0f;
+GLfloat OutputPeriad = 1.0f;
+GLfloat DeltaTime = 0.0f;
 //------------------------------------------
 
 //---------------test code------------------
@@ -53,7 +60,7 @@ void Solar::Init(){
 
 	//Load Resource
 	std::string textureDir = "textures";
-	std::string planetNames[SOLAR_PLANET_NUMBERS] = { "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune" };
+	std::string planetNames[SOLAR_PLANET_NUMBERS] = { "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"};
 
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
@@ -62,6 +69,8 @@ void Solar::Init(){
 		ResourceManager::LoadTexture(texturePath.c_str(), GL_FALSE, textureName.c_str());
 	}
 	ResourceManager::LoadTexture("textures/planet_textures/texture_sun.jpg", GL_FALSE, "sun");
+	ResourceManager::LoadTexture("textures/planet_textures/texture_moon.jpg", GL_FALSE, "moon");
+	ResourceManager::LoadTexture("textures/planet_textures/texture_comet.jpg", GL_FALSE, "comet");
 	ResourceManager::LoadTexture("textures/Moss/mossgrown.png", GL_FALSE, "moss");
 	ResourceManager::LoadCubeMap("textures/skybox", GL_FALSE, "skybox1");
 
@@ -69,11 +78,10 @@ void Solar::Init(){
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/lightSource.frag", nullptr, "light").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/dirLight.frag", nullptr, "dirLight").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/pointLight.frag", nullptr, "pointLight").SetUniformBlock("camera", 0);
-	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLight.frag", nullptr, "instanceDir").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/skybox.vs", "shaders/skybox.frag", nullptr, "skybox").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/star.vs", "shaders/pointLight.frag", nullptr, "star").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/sun.vs", "shaders/lightSource.frag", nullptr, "sun").SetUniformBlock("camera", 0);
-	ResourceManager::LoadShader("shaders/instance.vs", "shaders/dirLightShadow.frag", nullptr, "shadow").SetUniformBlock("camera", 0);
+	ResourceManager::LoadShader("shaders/shadow.vs", "shaders/dirLightShadow.frag", nullptr, "shadow").SetUniformBlock("camera", 0);
 	ResourceManager::LoadShader("shaders/quad.vs", "shaders/hdr.frag", nullptr, "hdr");
 	ResourceManager::LoadShader("shaders/depth.vs", "shaders/depth.frag", nullptr, "depth");
 
@@ -90,6 +98,9 @@ void Solar::Init(){
 		Texture2D *texture = ResourceManager::GetTexturePointer(planetNames[i]);
 		planets.push_back(PlanetObject(mesh, texture, planetPara[i]));
 	}
+	moon = Satellite(mesh, ResourceManager::GetTexturePointer("moon"), planetPara[SOLAR_PLANET_NUMBERS]);
+	moon.SetHostPlanet(&planets[SOLAR_PLANET_EARTH]);
+	comet = PlanetObject(mesh, ResourceManager::GetTexturePointer("comet"), planetPara[SOLAR_PLANET_NUMBERS + 1]);
 	sun = Sun(mesh, ResourceManager::GetTexturePointer("sun"), planetPara.back());
 
 	ground = Ground(ResourceManager::GetMeshPointer("plane"), ResourceManager::GetTexturePointer("moss"), 20.0f, 20.0f);
@@ -99,6 +110,8 @@ void Solar::Init(){
 	pointLight = PointLight(glm::vec3(0.0f), SOLAR_BRIGHTNESS_LIGHT, 0.02f);
 	
 	shadowRenderer = ShadowRender(dirLight.Direction, 50.0f, 1.0f, 20.0f, ResourceManager::GetShaderPointer("depth"));
+	text = TextRenderer(this->Width, this->Height);
+	text.Load("fonts/OCRAEXT.TTF", 24);
 
 	camera.BindUniformBuffer(0);
 	//-----------------test code----------------
@@ -120,7 +133,7 @@ void Solar::Init(){
 		std::cout << "Framebuffer not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	screen = PlaneObject(ResourceManager::GetMeshPointer("plane"), &shadowRenderer.DepthMap);
+	screen = PlaneObject(ResourceManager::GetMeshPointer("plane"), &colorBuffer);
 	//------------------------------------------
 }
 
@@ -141,21 +154,58 @@ void Solar::ProcessInput(GLfloat dt){
 	{
 		camera.ProcessKeyBoard(RIGHT, dt);
 	}
-
-	if (InputManager::isKeyPressed(GLFW_KEY_UP)
-		&& !InputManager::isKeyProcessed(GLFW_KEY_UP))
+	if (InputManager::isKeyPressed(GLFW_KEY_LEFT_CONTROL))
 	{
-		time_scale_index = (time_scale_index + 1) % 5;
-		TimeManager::SetTimeScale(time_scale[time_scale_index]);
-		InputManager::ClearKeyBuffer(GLFW_KEY_UP);
+		if (InputManager::isKeyPressed(GLFW_KEY_UP))
+		{
+			latitude += dt * 20.0f;
+			if (latitude >= 90.0f)
+			{
+				latitude = 89.0f;
+			}
+		}
+		if (InputManager::isKeyPressed(GLFW_KEY_DOWN))
+		{
+			latitude -= dt * 20.0f;
+			if (latitude <= -90.0f)
+			{
+				latitude = -89.0f;
+			}
+		}
+		if (InputManager::isKeyPressed(GLFW_KEY_RIGHT))
+		{
+			longitude += dt * 20.0f;
+			if (longitude >= 180.0f)
+			{
+				longitude = 179.0f;
+			}
+		}
+		if (InputManager::isKeyPressed(GLFW_KEY_LEFT))
+		{
+			longitude -= dt * 20.0f;
+			if (longitude <= -180.0f)
+			{
+				longitude = -179.0f;
+			}
+		}
 	}
-
-	if (InputManager::isKeyPressed(GLFW_KEY_DOWN)
-		&& !InputManager::isKeyProcessed(GLFW_KEY_DOWN))
+	else
 	{
-		time_scale_index = (time_scale_index - 1) % 5;
-		TimeManager::SetTimeScale(time_scale[time_scale_index]);
-		InputManager::ClearKeyBuffer(GLFW_KEY_DOWN);
+		if (InputManager::isKeyPressed(GLFW_KEY_UP)
+			&& !InputManager::isKeyProcessed(GLFW_KEY_UP))
+		{
+			time_scale_index = (time_scale_index + 1) % 5;
+			TimeManager::SetTimeScale(time_scale[time_scale_index]);
+			InputManager::ClearKeyBuffer(GLFW_KEY_UP);
+		}
+
+		if (InputManager::isKeyPressed(GLFW_KEY_DOWN)
+			&& !InputManager::isKeyProcessed(GLFW_KEY_DOWN))
+		{
+			time_scale_index = (time_scale_index - 1) % 5;
+			TimeManager::SetTimeScale(time_scale[time_scale_index]);
+			InputManager::ClearKeyBuffer(GLFW_KEY_DOWN);
+		}
 	}
 
 	if (this->Vmode == SpaceMode)
@@ -199,6 +249,20 @@ void Solar::ProcessInput(GLfloat dt){
 	}
 	camera.ProcessMouseMovement(InputManager::DeltaX, InputManager::DeltaY);
 	camera.ProcessMouseScroll(InputManager::MouseScroll);
+	this->OutPut(dt);
+}
+
+void Solar::OutPut(GLfloat dt){
+	DeltaTime += dt;
+	if (DeltaTime > OutputPeriad)
+	{
+		DeltaTime = 0.0f;
+		std::cout << "Time(UTC):	" << TimeManager::TimeStringUtc();
+		std::cout << "Time(LOCAL):	" << TimeManager::TimeStringLocal(longitude);
+		std::cout << "Longitude:	" << longitude << std::endl;
+		std::cout << "Latitude:	" << latitude << std::endl;
+		PRINT("");
+	}
 }
 
 void Solar::Update(GLfloat dt){
@@ -210,11 +274,15 @@ void Solar::Update(GLfloat dt){
 		planets[i].UpdatePosition(TimeManager::GetTime());
 		planets[i].UpdateRotation(TimeManager::GetTime());
 	}
+	moon.UpdatePosition(TimeManager::GetTime());
+	comet.UpdatePosition(TimeManager::GetTime());
 	for (GLint i = 0; i < SOLAR_PLANET_NUMBERS; i++)
 	{
 		planets[i].UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
 		planets[i].UpdateViewSize(&planets[SOLAR_PLANET_EARTH]);
 	}
+	moon.UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
+	moon.UpdateViewSize(&planets[SOLAR_PLANET_EARTH]);
 	sun.UpdateViewDirecton(&planets[SOLAR_PLANET_EARTH], longitude, latitude);
 	sun.UpdateViewSize(&planets[SOLAR_PLANET_EARTH]);
 
@@ -224,7 +292,8 @@ void Solar::Update(GLfloat dt){
 }
 
 void Solar::Render(){
-	//--------------test code-----------------
+	////--------------test code-----------------
+	//Render depth buffer
 	shadowRenderer.BeginRender();
 	ground.Draw(*shadowRenderer.DepthShader);
 	shadowRenderer.EndRender();
@@ -257,8 +326,13 @@ void Solar::RenderSpace(){
 		SObject *obj = &planets[i];
 		obj->Draw(*planetShader);
 	}
+	SObject *obj;
+	obj = &moon;
+	obj->Draw(*planetShader);
+	obj = &comet;
+	obj->Draw(*planetShader);
 
-	SObject *obj = &sun;
+	obj = &sun;
 	Shader lightShader = ResourceManager::GetShader("light").Use();
 	obj->Draw(lightShader);
 
@@ -285,7 +359,7 @@ void Solar::RenderGround(){
 		if (i == SOLAR_PLANET_EARTH) continue;
 		planets[i].DrawStar(*starShader);
 	}
-
+	moon.DrawStar(*starShader);
 	//Render sun
 	Shader lightShader = ResourceManager::GetShader("sun").Use();
 	sun.DrawStar(lightShader);

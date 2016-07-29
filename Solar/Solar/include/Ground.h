@@ -9,15 +9,13 @@ class Ground
 {
 public:
 	GLfloat Length, Width;
-	PlaneObject Terrian;
 	Ground();
 	Ground(Mesh *mesh, Texture2D *texture, GLfloat length, GLfloat width);
-	void Draw(Shader shder);
+	void Draw(Shader shader);
 	~Ground();
 
 private:
-	std::vector<glm::mat4> modelMatrcies;
-	void generateModelMatrcies();
+	PlaneObject Terrian;
 };
 
 

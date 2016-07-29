@@ -11,6 +11,8 @@ class TimeManager
 public:
 	static void InitTime();
 	static double GetTime();
+	static std::string TimeStringUtc();
+	static std::string TimeStringLocal(GLfloat longitude);
 	static void UpdateTime(GLfloat dt);
 	static void Stop();
 	static void Continue();
