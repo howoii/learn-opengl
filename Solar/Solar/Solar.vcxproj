@@ -78,7 +78,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\Camera.h" />
+    <ClInclude Include="include\City.h" />
     <ClInclude Include="include\Common.h" />
+    <ClInclude Include="include\CubeObject.h" />
     <ClInclude Include="include\DirLight.h" />
     <ClInclude Include="include\Ground.h" />
     <ClInclude Include="include\InputManager.h" />
@@ -96,13 +98,14 @@
     <ClInclude Include="include\SolarMath.h" />
     <ClInclude Include="include\SolarTime.h" />
     <ClInclude Include="include\Sun.h" />
-    <ClInclude Include="include\TextRenderer.h" />
     <ClInclude Include="include\Texture2D.h" />
     <ClInclude Include="include\TextureCube.h" />
     <ClInclude Include="include\TimeManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\City.cpp" />
+    <ClCompile Include="src\CubeObject.cpp" />
     <ClCompile Include="src\DirLight.cpp" />
     <ClCompile Include="src\Ground.cpp" />
     <ClCompile Include="src\InputManager.cpp" />
@@ -121,7 +124,6 @@
     <ClCompile Include="src\SolarMath.cpp" />
     <ClCompile Include="src\SolarTime.cpp" />
     <ClCompile Include="src\Sun.cpp" />
-    <ClCompile Include="src\TextRenderer.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
     <ClCompile Include="src\TextureCube.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />

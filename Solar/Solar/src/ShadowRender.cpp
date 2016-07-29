@@ -21,6 +21,8 @@ void ShadowRender::setupFrameBuffer()
 	this->DepthMap.Internal_Format = GL_DEPTH_COMPONENT;
 	this->DepthMap.Image_Format = GL_DEPTH_COMPONENT;
 	this->DepthMap.DataType = GL_FLOAT;
+	this->DepthMap.Wrap_S = GL_CLAMP_TO_BORDER;
+	this->DepthMap.Wrap_T = GL_CLAMP_TO_BORDER;
 	this->DepthMap.Generate(SHADOW_WIDTH, SHADOW_HEIGHT, NULL);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->DepthMap.ID, 0);
 

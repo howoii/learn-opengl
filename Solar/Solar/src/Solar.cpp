@@ -12,9 +12,11 @@
 #include "PointLight.h"
 #include "DirLight.h"
 #include "Ground.h"
+#include "City.h"
 #include "SkyBox.h"
 #include "ShadowRender.h"
-#include "TextRenderer.h"
+
+#include "CubeObject.h"
 
 Camera camera(GLfloat(4)/3, 0.0, 0.0, glm::vec3(0.0f, 60.0f, 0.0f));
 PointLight pointLight;
@@ -25,10 +27,11 @@ Satellite moon;
 Sun sun;
 SkyBox sky;
 Ground ground;
+City city;
 ShadowRender shadowRenderer;
-TextRenderer text;
 //----------------temp code-----------------
 GLfloat time_scale[5] = { 1.0f, 3600.0f, 3600.0f*24.0f, 3600.0f*24.0f*30.0f, 3600.0f*24.0f*365.0f };
+std::string time_accelerate[5] = { "Normal", "X 1Hour", "X 1Day", "X 1Month", "X 1Year" };
 GLint time_scale_index = 0;
 GLfloat longitude = 120.0f;
 GLfloat latitude = 0.0f;
@@ -72,6 +75,7 @@ void Solar::Init(){
 	ResourceManager::LoadTexture("textures/planet_textures/texture_moon.jpg", GL_FALSE, "moon");
 	ResourceManager::LoadTexture("textures/planet_textures/texture_comet.jpg", GL_FALSE, "comet");
 	ResourceManager::LoadTexture("textures/Moss/mossgrown.png", GL_FALSE, "moss");
+	ResourceManager::LoadTexture("textures/texture_building.jpg", GL_FALSE, "building");
 	ResourceManager::LoadCubeMap("textures/skybox", GL_FALSE, "skybox1");
 
 	ResourceManager::LoadShader("shaders/basic.vs", "shaders/basic.frag", nullptr, "basic").SetUniformBlock("camera", 0);
@@ -104,14 +108,14 @@ void Solar::Init(){
 	sun = Sun(mesh, ResourceManager::GetTexturePointer("sun"), planetPara.back());
 
 	ground = Ground(ResourceManager::GetMeshPointer("plane"), ResourceManager::GetTexturePointer("moss"), 20.0f, 20.0f);
+	ground.SetBrickSize(40.0f);
+	city = City(ResourceManager::GetMeshPointer("cube"), ResourceManager::GetTexturePointer("building"), 200.0f, 0.3f);
 	sky = SkyBox(ResourceManager::GetMeshPointer("cube"), ResourceManager::getCubeMapPointer("skybox1"));
 
 	dirLight = DirLight(glm::vec3(-1.0f), SOLAR_BRIGHTNESS_LIGHT, 0.1f);
 	pointLight = PointLight(glm::vec3(0.0f), SOLAR_BRIGHTNESS_LIGHT, 0.02f);
 	
-	shadowRenderer = ShadowRender(dirLight.Direction, 50.0f, 1.0f, 20.0f, ResourceManager::GetShaderPointer("depth"));
-	text = TextRenderer(this->Width, this->Height);
-	text.Load("fonts/OCRAEXT.TTF", 24);
+	shadowRenderer = ShadowRender(dirLight.Direction, 500.0f, 1.0f, 200.0f, ResourceManager::GetShaderPointer("depth"));
 
 	camera.BindUniformBuffer(0);
 	//-----------------test code----------------
@@ -208,6 +212,27 @@ void Solar::ProcessInput(GLfloat dt){
 		}
 	}
 
+	if (InputManager::isKeyPressed(GLFW_KEY_ENTER)
+		&& !InputManager::isKeyProcessed(GLFW_KEY_ENTER))
+	{
+		if (TimeManager::IsStopped())
+		{
+			TimeManager::Continue();
+		}
+		else
+		{
+			TimeManager::Stop();
+		}
+		InputManager::ClearKeyBuffer(GLFW_KEY_ENTER);
+	}
+
+	if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
+		&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
+	{
+		camera.Reset();
+		InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
+	}
+
 	if (this->Vmode == SpaceMode)
 	{
 		if (InputManager::isKeyPressed(GLFW_KEY_TAB) 
@@ -215,13 +240,6 @@ void Solar::ProcessInput(GLfloat dt){
 		{
 			this->Vmode = GroundMode;
 			InputManager::ClearKeyBuffer(GLFW_KEY_TAB);
-		}
-
-		if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
-			&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
-		{
-			camera.Reset();
-			InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
 		}
 	}
 	else
@@ -232,41 +250,28 @@ void Solar::ProcessInput(GLfloat dt){
 			this->Vmode = SpaceMode;
 			InputManager::ClearKeyBuffer(GLFW_KEY_TAB);
 		}
-
-		if (InputManager::isKeyPressed(GLFW_KEY_SPACE)
-			&& !InputManager::isKeyProcessed(GLFW_KEY_SPACE))
-		{
-			if (TimeManager::IsStopped())
-			{
-				TimeManager::Continue();
-			}
-			else
-			{
-				TimeManager::Stop();
-			}
-			InputManager::ClearKeyBuffer(GLFW_KEY_SPACE);
-		}
 	}
 	camera.ProcessMouseMovement(InputManager::DeltaX, InputManager::DeltaY);
 	camera.ProcessMouseScroll(InputManager::MouseScroll);
-	this->OutPut(dt);
 }
 
-void Solar::OutPut(GLfloat dt){
-	DeltaTime += dt;
-	if (DeltaTime > OutputPeriad)
-	{
-		DeltaTime = 0.0f;
-		std::cout << "Time(UTC):	" << TimeManager::TimeStringUtc();
-		std::cout << "Time(LOCAL):	" << TimeManager::TimeStringLocal(longitude);
-		std::cout << "Longitude:	" << longitude << std::endl;
-		std::cout << "Latitude:	" << latitude << std::endl;
-		PRINT("");
-	}
+void Solar::OutPut(){
+	std::cout << "Time(UTC):	" << TimeManager::TimeStringUtc();
+	std::cout << "Time(LOCAL):	" << TimeManager::TimeStringLocal(longitude);
+	std::cout << "Longitude:	" << longitude << std::endl;
+	std::cout << "Latitude:	" << latitude << std::endl;
+	std::cout << "Time Accelerate:	" << time_accelerate[time_scale_index] << std::endl;
+	PRINT("");
 }
 
 void Solar::Update(GLfloat dt){
 	TimeManager::UpdateTime(dt);
+	DeltaTime += dt;
+	if (DeltaTime > OutputPeriad)
+	{
+		DeltaTime -= OutputPeriad;
+		this->OutPut();
+	}
 	//--------------test code------------------
 	//-----------------------------------------
 	for (GLint i=0; i < SOLAR_PLANET_NUMBERS; i++)
@@ -296,6 +301,7 @@ void Solar::Render(){
 	//Render depth buffer
 	shadowRenderer.BeginRender();
 	ground.Draw(*shadowRenderer.DepthShader);
+	city.Draw(*shadowRenderer.DepthShader);
 	shadowRenderer.EndRender();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
@@ -336,10 +342,10 @@ void Solar::RenderSpace(){
 	Shader lightShader = ResourceManager::GetShader("light").Use();
 	obj->Draw(lightShader);
 
-	glDepthFunc(GL_LEQUAL);
-	Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
-	sky.Draw(skyboxShader);
-	glDepthFunc(GL_LESS);
+	//glDepthFunc(GL_LEQUAL);
+	//Shader skyboxShader = ResourceManager::GetShader("skybox").Use();
+	//sky.Draw(skyboxShader);
+	//glDepthFunc(GL_LESS);
 }
 
 void Solar::RenderGround(){
@@ -373,4 +379,5 @@ void Solar::RenderGround(){
 	shadowRenderer.DepthMap.Bind();
 	shadowShader->SetInteger("shadowMap", 1);
 	ground.Draw(*shadowShader);
+	city.Draw(*shadowShader);
 }

@@ -20,6 +20,12 @@ void Texture2D::Generate(GLuint width, GLuint height, unsigned char *data){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->Filter_Min);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->Filter_Mag);
 
+	if (this->Wrap_S == GL_CLAMP_TO_BORDER)
+	{
+		GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	}
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 

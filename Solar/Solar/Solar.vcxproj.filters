@@ -81,7 +81,10 @@
     <ClInclude Include="include\Satellite.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="include\TextRenderer.h">
+    <ClInclude Include="include\CubeObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\City.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -152,7 +155,10 @@
     <ClCompile Include="src\Satellite.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\TextRenderer.cpp">
+    <ClCompile Include="src\CubeObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\City.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

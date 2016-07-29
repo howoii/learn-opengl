@@ -26,6 +26,6 @@ public:
 private:
 	void RenderSpace();
 	void RenderGround();
-	void OutPut(GLfloat dt);
+	void OutPut();
 };
 #endif

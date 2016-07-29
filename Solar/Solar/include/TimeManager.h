@@ -28,7 +28,7 @@ private:
 	static SolarTime Time;
 	static SolarTime Epoch;
 	static GLfloat Scale;
-
+	static GLfloat deltaTime;
 	static GLboolean Stopped;
 	TimeManager(){}
 };
